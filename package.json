@@ -12,17 +12,17 @@
 		"url": "git+https://github.com/SheikhAminul/i18next-lite.git"
 	},
 	"keywords": [
-		"localStorage",
-		"sessionStorage",
-		"getLocal",
-		"setLocal",
-		"getSession",
-		"setSession",
-		"browser",
-		"sync",
-		"storage",
-		"clearLocal",
-		"clearSession"
+		"i18n",
+		"react",
+		"translation",
+		"localization",
+		"i18next-lite",
+		"locale",
+		"internationalization",
+		"globalization",
+		"useTranslate",
+		"TranslationProvider",
+		"browser"
 	],
 	"author": "Sheikh Aminul <aminulfse@gmail.com>",
 	"license": "ISC",
