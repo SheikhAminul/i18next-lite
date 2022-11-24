@@ -1,0 +1,43 @@
+{
+	"name": "i18next-lite",
+	"version": "1.0.15",
+	"description": "Easily store objects or any type of data to localStorage or sessionStorage.",
+	"main": "lib/index.js",
+	"types": "lib/index.d.ts",
+	"scripts": {
+		"build": "tsc"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/SheikhAminul/i18next-lite.git"
+	},
+	"keywords": [
+		"localStorage",
+		"sessionStorage",
+		"getLocal",
+		"setLocal",
+		"getSession",
+		"setSession",
+		"browser",
+		"sync",
+		"storage",
+		"clearLocal",
+		"clearSession"
+	],
+	"author": "Sheikh Aminul <aminulfse@gmail.com>",
+	"license": "ISC",
+	"bugs": {
+		"url": "https://github.com/SheikhAminul/i18next-lite/issues"
+	},
+	"files": [
+		"lib/**/*"
+	],
+	"homepage": "https://github.com/SheikhAminul/i18next-lite#readme",
+	"devDependencies": {
+		"@types/react": "18.0.25",
+		"typescript": "^4.8.4"
+	},
+	"dependencies": {
+		"react": "18.2.0"
+	}
+}
