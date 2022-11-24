@@ -8,9 +8,8 @@ type Translations = {
         }
     }
 }
-type TranslatorConfiguration = { language?: string, defaultLanguage?: string, translations?: Translations }
 type TranslateFunction = (key: string, substitutions?: any) => string
-type ConfigureFunction = ({ language, defaultLanguage, translations }: TranslatorConfiguration) => void
+type ConfigureFunction = ({ language, defaultLanguage, translations }: { language?: string, defaultLanguage?: string, translations?: Translations }) => void
 
 const TranslationContext = createContext({} as {
     configure: ConfigureFunction,
@@ -18,7 +17,7 @@ const TranslationContext = createContext({} as {
 })
 
 function TranslationProvider({ language, defaultLanguage, translations, children }: { language?: string, defaultLanguage?: string, translations: Translations, children: ReactElement }) {
-    function validateConfiguration({ language, defaultLanguage, translations }: TranslatorConfiguration) {
+    function validateConfiguration({ language, defaultLanguage, translations }: { language?: string, defaultLanguage?: string, translations?: Translations }) {
         if (!language && translations) {
             language = navigator.language
             if (!translations[language]) language = language.substring(0, 2)
@@ -38,7 +37,7 @@ function TranslationProvider({ language, defaultLanguage, translations, children
 
     const { translation: activeTranslation } = configuration.translations[configuration.language]
 
-    function configure(translatorConfiguration: TranslatorConfiguration) {
+    function configure(translatorConfiguration: { language?: string, defaultLanguage?: string, translations?: Translations }) {
         setConfiguration(
             validateConfiguration({
                 ...configuration,
