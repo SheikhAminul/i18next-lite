@@ -187,7 +187,7 @@ configure({ language: 'en' }) // Changes language to English.
 ```
 
 ### Load/Import from JSON:
-Load/import translation data from one more JSON files. [Check this CodeSandbox example for details instructions and file/folder structure.](https://codesandbox.io/s/i18next-lite-json-cij8np?file=/src/index.jsx)
+Load/import translation data from one more JSON files. [Check this CodeSandbox example for detailed instructions and file/folder structure.](https://codesandbox.io/s/i18next-lite-json-cij8np?file=/src/index.jsx)
 
 ```javascript
 const translations = {
