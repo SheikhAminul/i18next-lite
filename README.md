@@ -36,7 +36,7 @@ npm i i18next-lite
 
 ## Usage
 
-A minimal example of implementing 3 languages with the ability to switch languages. [Try/run live on CodeSandbox.](https://codesandbox.io/s/infallible-wright-cij8np?file=/src/index.jsx){:target="_blank"}
+A minimal example of implementing 3 languages with the ability to switch languages. <a href="https://codesandbox.io/s/infallible-wright-cij8np?file=/src/index.jsx" target="_blank">Try/run live on CodeSandbox.</a>
 
 ```javascript
 import { createRoot } from 'react-dom/client'
