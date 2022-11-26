@@ -1,6 +1,6 @@
 {
 	"name": "i18next-lite",
-	"version": "1.0.9",
+	"version": "1.0.10",
 	"description": "Easily store objects or any type of data to localStorage or sessionStorage.",
 	"main": "lib/index.js",
 	"types": "lib/index.d.ts",
