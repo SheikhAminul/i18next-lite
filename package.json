@@ -25,7 +25,7 @@
 		"browser"
 	],
 	"author": "Sheikh Aminul <aminulfse@gmail.com>",
-	"license": "ISC",
+	"license": "MIT",
 	"bugs": {
 		"url": "https://github.com/SheikhAminul/i18next-lite/issues"
 	},
