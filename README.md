@@ -1,5 +1,4 @@
-i18next-lite
-
+i18next-lite<br>
 [![NPM Version](https://img.shields.io/npm/v/i18next-lite.svg?branch=main)](https://www.npmjs.com/package/i18next-lite)  
 [![Publish Size](https://badgen.net/packagephobia/publish/i18next-lite)](https://packagephobia.now.sh/result?p=i18next-lite)  
 [![Downloads](https://img.shields.io/npm/dt/i18next-lite)](https://www.npmjs.com/package/i18next-lite)  
@@ -10,6 +9,7 @@ i18next-lite
 i18next-lite is a lightweight and super simple i18n/internationalization module for React().  
 Why this? i18next-lite is specially designed only for React. Developed using modern React APIs. It is super simple, lightweight, fast and provides the necessary APIs to implement multiple language support.
 
+
 ## Table of Contents
 
 *   [Features](#features)
@@ -17,6 +17,7 @@ Why this? i18next-lite is specially designed only for React. Developed using mod
 *   [Usage](#usage)
 *   [License](#license)
 *   [Author](#author)
+
 
 ## Features
 
@@ -26,11 +27,13 @@ Why this? i18next-lite is specially designed only for React. Developed using mod
 *   Loading translations dynamically from JSON data.
 *   Ability to change language without reloading the page.
 
+
 ## Install
 
 ```plaintext
 npm i i18next-lite
 ```
+
 
 ## Usage
 
