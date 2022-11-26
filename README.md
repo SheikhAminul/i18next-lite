@@ -2,7 +2,7 @@ i18next-lite<br>
 [![NPM Version](https://img.shields.io/npm/v/i18next-lite.svg?branch=main)](https://www.npmjs.com/package/i18next-lite)
 [![Publish Size](https://badgen.net/packagephobia/publish/i18next-lite)](https://packagephobia.now.sh/result?p=i18next-lite)
 [![Downloads](https://img.shields.io/npm/dt/i18next-lite)](https://www.npmjs.com/package/i18next-lite)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/SheikhAminul/i18next-lite/blob/main/LICENSE)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/SheikhAminul/i18next-lite/blob/main/LICENSE)
 ================
 
 i18next-lite is a lightweight and super simple i18n/internationalization module for React.  
@@ -186,10 +186,21 @@ const configure = useTranslatorConfigurer()
 configure({ language: 'en' }) // Changes language to English.
 ```
 
+### Load/Import from JSON:
+Load/import translation data from one more JSON files. [Check this CodeSandbox example for details instructions and file/folder structure.](https://codesandbox.io/s/i18next-lite-json-cij8np?file=/src/index.jsx)
+
+```javascript
+const translations = {
+	...require('../src/locales/en.json'),
+	...require('../src/locales/es.json'),
+	...require('../src/locales/bn.json')
+}
+```
+
 
 ## License
 
-storage-sync-lite is licensed under the [MIT license](https://github.com/SheikhAminul/storage-sync-lite/blob/main/LICENSE).
+i18next-lite is licensed under the [MIT license](https://github.com/SheikhAminul/i18next-lite/blob/main/LICENSE).
 
 
 ## Author
