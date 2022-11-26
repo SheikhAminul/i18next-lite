@@ -102,7 +102,7 @@ function ExampleLanguageSwitcher() {
                 <span onClick={() => configure({ language: 'bn' })}>Bangla</span>
             </div>
         </div>
-    );
+    )
 }
 
 const rootElement = document.getElementById('root')
@@ -114,11 +114,15 @@ root.render(<App />)
 
 ## Documentation
 
+### TranslationProvider:
+
 The parameters of the **TranslationProvider** component:
 
 *   **translations** - Required. Your translation data (in JSON format) for different languages.
 *   **defaultLanguage** - Optional. The _defaultLanguage_ will be used if the detected browser language does not exist in your translation data. So make sure the _defaultLanguage_ exists in your translation data.
 *   **language** - Optional. The language to use. If a valid language is passed, it will use that language and ignore the detected system/browser language.
+
+Example:
 
 ```javascript
 function App() {
@@ -126,7 +130,7 @@ function App() {
         <TranslationProvider
             translations={translations}
             defaultLanguage='en'
-            language={'es'}
+            language='es'
         >
             ...
         </TranslationProvider>
@@ -134,6 +138,53 @@ function App() {
 }
 ```
 
+### useTranslate (hook):
+
+In your React components, you can use the **useTranslate** hook to get the _translate_ function.
+
+```javascript
+const translate = useTranslate()
+```
+
+The parameters of the _translate_ function:
+
+*   **key** - Required. The key for a translation that was used in the translation data object.
+*   **substitutions** - Optional. Passes dynamic values in the translation.
+
+For substitution, the keys are surrounded by curly brackets:
+
+```javascript
+{
+    "greeting_message": "Hi {{userName}}. You have {{totalUnread}} messages."
+}
+```
+
+Example:
+
+```javascript
+translate("greeting_message", { userName: "Mr. White", totalUnread: 5 })
+// → "Hi Mr. White. You have 5 messages."
+```
+
+### useTranslatorConfigurer (hook):
+
+In your React components, you can use the **useTranslatorConfigurer** hook to get the translator _configure_ function. You can change the _language_ or set the _translations_ dynamically using this function.
+
+```javascript
+const configure = useTranslatorConfigurer()
+```
+
+You can pass the following keys to the parameter of the _configure_ function:
+
+*   **translations** - Optional. Your translation data (in JSON format) for different languages.
+*   **language** - Optional. The language to use.
+
+To change language:
+
+```javascript
+const configure = useTranslatorConfigurer()
+configure({ language: 'en' }) // Changes language to English.
+```
 
 
 ## License
