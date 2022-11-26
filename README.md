@@ -36,7 +36,7 @@ npm i i18next-lite
 
 ## Usage
 
-A minimal example of implementing 3 languages with the ability to switch languages.
+A minimal example of implementing 3 languages with the ability to switch languages. [Try/run live on CodeSandbox.](https://codesandbox.io/s/infallible-wright-cij8np?file=/src/index.jsx){:target="_blank"}
 
 ```javascript
 import { createRoot } from 'react-dom/client'
@@ -94,9 +94,9 @@ function ExampleLanguageSwitcher() {
     return (
         <div>
             <div>Select language:</div>
-            <div style={{ display: 'flex', gap: '0.5em', cursor: 'pointer', color: 'blue' }} >
-                <span onClick={() => configure({ language: 'en' })}>English</span>|
-                <span onClick={() => configure({ language: 'es' })}>Spanish</span>|
+            <div>
+                <span onClick={() => configure({ language: 'en' })}>English</span> |
+                <span onClick={() => configure({ language: 'es' })}>Spanish</span> |
                 <span onClick={() => configure({ language: 'bn' })}>Bangla</span>
             </div>
         </div>
