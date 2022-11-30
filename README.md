@@ -116,7 +116,7 @@ root.render(<App />)
 
 ### TranslationProvider:
 
-The parameters of the **TranslationProvider** component:
+The props of the **TranslationProvider** component:
 
 *   **translations** - Required. Your translation data (in JSON format) for different languages.
 *   **defaultLanguage** - Optional. The _defaultLanguage_ will be used if the detected browser language does not exist in your translation data. So make sure the _defaultLanguage_ exists in your translation data.
