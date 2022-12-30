@@ -13,7 +13,8 @@ type ConfigureFunction = ({ language, defaultLanguage, translations }: { languag
 
 const TranslationContext = createContext({} as {
     configure: ConfigureFunction,
-    translate: TranslateFunction
+    translate: TranslateFunction,
+    configuration: { language: string, defaultLanguage?: string }
 })
 
 function TranslationProvider({ language, defaultLanguage, translations, children }: { language?: string, defaultLanguage?: string, translations: Translations, children: ReactElement }) {
@@ -53,7 +54,7 @@ function TranslationProvider({ language, defaultLanguage, translations, children
     }
 
     return (
-        <TranslationContext.Provider value={{ configure, translate }}   >
+        <TranslationContext.Provider value={{ configure, translate, configuration }}   >
             {children}
         </TranslationContext.Provider>
     )
@@ -71,4 +72,10 @@ function useTranslatorConfigurer() {
     return configure as ConfigureFunction
 }
 
-export { useTranslate, useTranslatorConfigurer, TranslationProvider }
+function useTranslatorConfiguration() {
+    const { configuration } = useContext(TranslationContext) || {}
+    if (!configuration) throw new Error('useTranslatorConfigurer must be used within TranslationProvider.')
+    return configuration as { language: string, defaultLanguage?: string }
+}
+
+export { useTranslate, useTranslatorConfigurer, useTranslatorConfiguration, TranslationProvider }
