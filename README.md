@@ -15,6 +15,7 @@ Why this? i18next-lite is specially designed only for React. Developed using mod
 *   [Install](#install)
 *   [Usage](#usage)
 *   [Documentation](#documentation)
+*   [Contributing](#contributing)
 *   [License](#license)
 *   [Author](#author)
 
@@ -196,6 +197,11 @@ const translations = {
 	...require('../src/locales/bn.json')
 }
 ```
+
+
+## Contributing
+
+You are welcome to contribute! If you are adding a feature or fixing a bug, please contribute to the [GitHub repository](https://github.com/SheikhAminul/i18next-lite/).
 
 
 ## License

@@ -1,6 +1,6 @@
 {
 	"name": "i18next-lite",
-	"version": "1.0.14",
+	"version": "1.1.15",
 	"description": "Lightweight and super simple i18n/internationalization module for React.",
 	"main": "lib/index.js",
 	"types": "lib/index.d.ts",
