@@ -8,7 +8,8 @@ type Translations = {
         }
     }
 }
-type TranslateFunction = (key: string, substitutions?: any) => string
+type Translation = (string | React.ReactElement)[] | string
+type TranslateFunction = (key: string, substitutions?: { [key: string]: string | React.ReactElement }) => Translation
 type ConfigureFunction = ({ language, defaultLanguage, translations }: { language?: string, defaultLanguage?: string, translations?: Translations }) => void
 
 const TranslationContext = createContext({} as {
@@ -47,10 +48,29 @@ function TranslationProvider({ language, defaultLanguage, translations, children
         )
     }
 
-    function translate(key: string, substitutions?: any) {
-        let translation = activeTranslation[key]
-        if (!translation) console.error(`The key "${key}" was not found!`)
-        return translation?.replace(/{{[^{}]+}}/, (substitution: string) => substitutions[substitution.slice(2, -2)]) as string
+    function translate(key: string, substitutions?: { [key: string]: string | React.ReactElement }): Translation {
+        let translation: Translation = activeTranslation[key]
+        if (translation) {
+            if (substitutions) {
+                translation = translation.split(/(\{\{[^{}]*\}\})/).filter(Boolean)
+                let stringOnly = true
+                for (const [key, value] of Object.entries(substitutions)) {
+                    const index = translation.indexOf(`{{${key}}}`)
+                    if (index !== -1) {
+                        if (typeof value === 'string') {
+                            translation[index] = value
+                        } else {
+                            stringOnly = false
+                            translation[index] = <React.Fragment key={index}>{value}</React.Fragment>
+                        }
+                    }
+                }
+                translation = stringOnly ? translation.join('') : translation.map((value, index) => {
+                    return typeof value === 'string' ? <React.Fragment key={index}>{value}</React.Fragment> : value
+                })
+            }
+        } else console.error(`The key "${key}" was not found!`)
+        return translation
     }
 
     return (
