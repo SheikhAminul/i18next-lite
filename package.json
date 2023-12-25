@@ -5,7 +5,8 @@
 	"main": "lib/index.js",
 	"types": "lib/index.d.ts",
 	"scripts": {
-		"build": "tsc"
+		"build": "tsc",
+		"watch:build": "(set /p dirPath=\"Enter Dir Path:\" || set dirPath=./lib) && call tsc --watch --outDir \"%dirPath%\""
 	},
 	"repository": {
 		"type": "git",
