@@ -85,19 +85,19 @@ const TranslationProvider: FC<{
 	)
 })
 
-function useTranslate() {
+const useTranslate = () => {
 	const { translate } = useContext(TranslationContext) || {}
 	if (!translate) throw new Error('useTranslate must be used within TranslationProvider.')
 	return translate as TranslateFunction
 }
 
-function useTranslatorConfigurer() {
+const useTranslatorConfigurer = () => {
 	const { configure } = useContext(TranslationContext) || {}
 	if (!configure) throw new Error('useTranslatorConfigurer must be used within TranslationProvider.')
 	return configure as ConfigureFunction
 }
 
-function useTranslatorConfiguration() {
+const useTranslatorConfiguration = () => {
 	const { configuration } = useContext(TranslationContext) || {}
 	if (!configuration) throw new Error('useTranslatorConfigurer must be used within TranslationProvider.')
 	return configuration as { language: string, defaultLanguage?: string }
