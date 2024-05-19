@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { createContext, FC, memo, ReactElement, useCallback, useContext, useState } from 'react'
+import { createContext, FC, memo, ReactNode, useCallback, useContext, useState } from 'react'
 
 type Translations = {
 	[language: string]: {
@@ -32,7 +32,7 @@ const TranslationProvider: FC<{
 	language?: string,
 	defaultLanguage?: string,
 	translations: Translations,
-	children: ReactElement
+	children: ReactNode
 }> = memo(({ language, defaultLanguage, translations, children }) => {
 	const [configuration, setConfiguration] = useState(
 		validateConfiguration({
