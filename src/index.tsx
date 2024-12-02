@@ -9,7 +9,7 @@ type Translations = {
 	}
 }
 type Translation = (string | React.ReactElement)[] | string
-type TranslateFunction = ((key: string, substitutions?: { [key: string]: string | React.ReactElement }) => Translation) | ((translations: { [language: string]: string }, substitutions?: { [key: string]: string | React.ReactElement }) => Translation)
+type TranslateFunction = (content: string | { [language: string]: string }, substitutions?: { [key: string]: string | React.ReactElement }) => Translation
 type ConfigureFunction = ({ language, defaultLanguage, translations }: { language?: string, defaultLanguage?: string, translations?: Translations }) => void
 
 const TranslationContext = createContext({} as {
@@ -51,7 +51,7 @@ const TranslationProvider: FC<{
 		}))
 	}, [])
 
-	const translate = useCallback((content: string, substitutions?: { [key: string]: string | React.ReactElement }): Translation => {
+	const translate = useCallback((content: string | { [language: string]: string }, substitutions?: { [key: string]: string | React.ReactElement }): Translation => {
 		let translation: Translation = typeof content === 'string' ? activeTranslation[content] : content?.[configuration.language]
 		if (!translation) {
 			translation = typeof content === 'string' ? content : content?.[configuration.defaultLanguage as string]
