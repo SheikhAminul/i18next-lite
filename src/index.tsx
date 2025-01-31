@@ -58,19 +58,21 @@ const TranslationProvider: FC<{
 			console.warn('No translation found!', { content, configuration })
 		}
 		if (substitutions) {
-			translation = translation.split(/(\{\{[^{}]*\}\})/).filter(Boolean)
+			translation = translation.split(/(\{\{[^{}]+\}\})/).filter(Boolean)
 			let stringOnly = true
-			for (const [key, value] of Object.entries(substitutions)) {
-				const index = translation.indexOf(`{{${key}}}`)
-				if (index !== -1) {
-					if (typeof value === 'string') {
-						translation[index] = value
-					} else {
-						stringOnly = false
-						translation[index] = <React.Fragment key={index}>{value}</React.Fragment>
-					}
+
+			translation = translation.map((segment, index) => {
+				const key = (segment as string).match(/^\{\{([^{}]+)\}\}$/)?.[1]
+				if (!key && !substitutions.hasOwnProperty(key as string)) return segment
+				const value = substitutions[key as string]
+				if (typeof value === 'string') {
+					return value
+				} else {
+					stringOnly = false
+					return <React.Fragment key={index}>{value}</React.Fragment>
 				}
-			}
+			})
+
 			translation = stringOnly ? translation.join('') : translation.map((value, index) => {
 				return typeof value === 'string' ? <React.Fragment key={index}>{value}</React.Fragment> : value
 			})
