@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { createContext, FC, memo, ReactNode, useCallback, useContext, useState } from 'react'
+import { createContext, FC, memo, ReactNode, useCallback, useContext, useEffect, useState } from 'react'
 
 type Translations = {
 	[language: string]: {
@@ -79,6 +79,12 @@ const TranslationProvider: FC<{
 		}
 		return translation
 	}, [activeTranslation])
+
+	useEffect(() => {
+		if (language !== configuration.language || defaultLanguage !== configuration.defaultLanguage || translations !== configuration.translations) configure({
+			language, defaultLanguage, translations
+		})
+	}, [language, defaultLanguage, translations])
 
 	return (
 		<TranslationContext.Provider value={{ configure, translate, configuration }}   >
