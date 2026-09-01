@@ -34,9 +34,12 @@
 		"./lib/**/*"
 	],
 	"homepage": "https://github.com/SheikhAminul/i18next-lite#readme",
+	"peerDependencies": {
+		"react": ">=19.0.0"
+	},
 	"devDependencies": {
-		"@types/react": "19.1.2",
-		"typescript": "^5.8.3",
-		"react": "^19.1.0"
+		"@types/react": "19.2.18",
+		"typescript": "^7.0.2",
+		"react": "^19.2.8"
 	}
 }
