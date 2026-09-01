@@ -20,10 +20,12 @@ const TranslationContext = createContext({} as {
 
 const validateConfiguration = ({ language, defaultLanguage, translations }: { language?: string, defaultLanguage?: string, translations?: Translations }) => {
 	if (!language && translations) {
-		language = navigator.language
-		if (!translations[language]) language = language.substring(0, 2)
-		if (!translations[language]) language = navigator.languages.find(language => translations[language]) as string
-		if (!translations[language]) language = translations[defaultLanguage as string] ? defaultLanguage : Object.keys(translations)[0]
+		if (typeof navigator !== 'undefined' && navigator?.language) {
+			language = navigator.language
+			if (!translations[language]) language = language.substring(0, 2)
+			if (!translations[language]) language = navigator.languages?.find(language => translations[language]) as string
+		}
+		if (!language || !translations[language]) language = translations[defaultLanguage as string] ? defaultLanguage : Object.keys(translations)[0]
 	}
 	return { language, defaultLanguage, translations } as { translations: Translations, language: string, defaultLanguage?: string }
 }
@@ -53,8 +55,10 @@ const TranslationProvider: FC<{
 
 	const translate = useCallback((content: string | { [language: string]: string }, substitutions?: { [key: string]: string | React.ReactElement }): Translation => {
 		let translation: Translation = typeof content === 'string' ? activeTranslation[content] : content?.[configuration.language]
-		if (!translation) {
-			translation = typeof content === 'string' ? content : content?.[configuration.defaultLanguage as string]
+		if (typeof translation !== 'string') {
+			translation = typeof content === 'string'
+				? content
+				: (content?.[configuration.defaultLanguage as string] ?? Object.values(content ?? {})[0] ?? '')
 			console.warn('No translation found!', { content, configuration })
 		}
 		if (substitutions) {
@@ -63,8 +67,8 @@ const TranslationProvider: FC<{
 
 			translation = translation.map((segment, index) => {
 				const key = (segment as string).match(/^\{\{([^{}]+)\}\}$/)?.[1]
-				if (!key && !substitutions.hasOwnProperty(key as string)) return segment
-				const value = substitutions[key as string]
+				if (!key || !substitutions.hasOwnProperty(key)) return segment
+				const value = substitutions[key]
 				if (typeof value === 'string') {
 					return value
 				} else {
@@ -78,12 +82,14 @@ const TranslationProvider: FC<{
 			})
 		}
 		return translation
-	}, [activeTranslation])
+	}, [activeTranslation, configuration.language, configuration.defaultLanguage])
 
 	useEffect(() => {
-		if (language !== configuration.language || defaultLanguage !== configuration.defaultLanguage || translations !== configuration.translations) configure({
-			language, defaultLanguage, translations
-		})
+		const next: { language?: string, defaultLanguage?: string, translations?: Translations } = {}
+		if (language !== undefined && language !== configuration.language) next.language = language
+		if (defaultLanguage !== undefined && defaultLanguage !== configuration.defaultLanguage) next.defaultLanguage = defaultLanguage
+		if (translations !== undefined && translations !== configuration.translations) next.translations = translations
+		if (Object.keys(next).length) configure(next)
 	}, [language, defaultLanguage, translations])
 
 	return (
@@ -107,7 +113,7 @@ const useTranslatorConfigurer = () => {
 
 const useTranslatorConfiguration = () => {
 	const { configuration } = useContext(TranslationContext) || {}
-	if (!configuration) throw new Error('useTranslatorConfigurer must be used within TranslationProvider.')
+	if (!configuration) throw new Error('useTranslatorConfiguration must be used within TranslationProvider.')
 	return configuration as { language: string, defaultLanguage?: string }
 }
 
