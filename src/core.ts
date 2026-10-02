@@ -49,6 +49,8 @@ interface Shared {
 	readonly translators: Map<string, Map<string, Translator>>
 	readonly formatters: Map<string, Formatter>
 	readonly warned: Set<string>
+	/** Instances with subscribers, re-rendered when loaded messages are replaced. */
+	readonly subscribed: Set<() => void>
 	/** Bumped whenever messages change, invalidating translators' lookup memos. */
 	version: number
 }
@@ -82,8 +84,12 @@ const chainOf = (shared: Shared, locale: string): readonly string[] => {
 const isLoaded = (shared: Shared, locale: string) => chainOf(shared, locale).every(entry => shared.loaded.has(entry))
 
 const setMessages = (shared: Shared, locale: string, messages: Messages) => {
+	// Only a replacement can change what is on screen: a locale renders once its whole chain is loaded.
+	// Adding a new locale (as I18nProvider does while rendering) must not notify, or it would update other components mid-render.
+	const replaced = shared.loaded.has(locale)
 	shared.loaded.set(locale, messages)
 	shared.version++
+	if (replaced) for (const refresh of [...shared.subscribed]) refresh()
 }
 
 /** Accepts `import('./x.json')` namespaces as well as plain message objects. */
@@ -99,7 +105,10 @@ const loadOne = (shared: Shared, locale: string): Promise<void> => {
 		const source = shared.config.locales[locale] as () => Promise<unknown>
 		pending = Promise.resolve()
 			.then(source)
-			.then(module => setMessages(shared, locale, unwrapModule(module)))
+			.then(module => {
+				// Messages added while loading (e.g. sent from the server) win over the loader's.
+				if (!shared.loaded.has(locale)) setMessages(shared, locale, unwrapModule(module))
+			})
 			.finally(() => shared.loading.delete(locale))
 		shared.loading.set(locale, pending)
 	}
@@ -206,11 +215,15 @@ const createInstance = (shared: Shared, requested: string | undefined): I18n => 
 	const listeners = new Set<() => void>()
 	let latestRequest = 0
 
-	const update = (next: I18nSnapshot) => {
-		if (next.locale === snapshot.locale && next.pendingLocale === snapshot.pendingLocale) return
+	const notify = (next: I18nSnapshot) => {
 		snapshot = next
 		for (const listener of listeners) listener()
 	}
+	const update = (next: I18nSnapshot) => {
+		if (next.locale !== snapshot.locale || next.pendingLocale !== snapshot.pendingLocale) notify(next)
+	}
+	// Same state, new snapshot: subscribers re-render with the replaced messages.
+	const refresh = () => notify({ ...snapshot })
 	const commit = (locale: string) => {
 		update({ locale, pendingLocale: undefined })
 		for (const detector of config.detectors ?? []) detector.persist?.(locale)
@@ -286,7 +299,12 @@ const createInstance = (shared: Shared, requested: string | undefined): I18n => 
 		clone: options => createInstance(shared, options?.locale ?? snapshot.locale),
 		subscribe: listener => {
 			listeners.add(listener)
-			return () => void listeners.delete(listener)
+			shared.subscribed.add(refresh)
+			return () => {
+				listeners.delete(listener)
+				// Unsubscribed instances (e.g. per-request clones) must not be kept alive by `shared`.
+				if (!listeners.size) shared.subscribed.delete(refresh)
+			}
 		},
 		getSnapshot: () => snapshot
 	}
@@ -318,6 +336,7 @@ export const createI18n = <const Locales extends Record<string, LocaleSource>, D
 		translators: new Map(),
 		formatters: new Map(),
 		warned: new Set(),
+		subscribed: new Set(),
 		version: 0
 	}
 	for (const locale of locales) {

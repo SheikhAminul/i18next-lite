@@ -74,6 +74,12 @@ describe('translate', () => {
 		])
 	})
 
+	it('accepts a bigint count', async () => {
+		const i18n = createTestI18n()
+		expect(i18n.t('inbox', { count: 1n })).toBe('You have 1 message')
+		expect(i18n.t('inbox', { count: 0n })).toBe('No messages')
+	})
+
 	it('supports flat keys that contain dots', () => {
 		const i18n = createI18n({ defaultLocale: 'en', locales: { en: { 'flat.key': 'Flat' } } })
 		expect(i18n.t('flat.key')).toBe('Flat')
@@ -176,6 +182,17 @@ describe('rich text', () => {
 		expect(html(i18n.t.rich('nested', { b, i }))).toBe('<b>bold <i>both</i></b>')
 		expect(loose(i18n.t).rich('broken', { b, i })).toBe('a <b>b </i> c')
 		expect(i18n.t.rich('stray')).toBe('x </b> 1 < 2')
+	})
+
+	it('parses whitespace and braces the way the types expect', () => {
+		const i18n = createI18n({
+			defaultLocale: 'en',
+			locales: { en: { spaced: 'One<br />Two <b >bold</b >', text: 'Use {curly braces}, {} and a < b > c', doubled: '{{name}}', attr: '<a href>x</a>' } }
+		})
+		expect(html(i18n.t.rich('spaced', { br: <br />, b: <b /> }))).toBe('One<br/>Two <b>bold</b>')
+		expect(i18n.t('text')).toBe('Use {curly braces}, {} and a < b > c')
+		expect(i18n.t('doubled', { name: 'x' })).toBe('{x}')
+		expect(i18n.t.rich('attr')).toBe('<a href>x</a>')
 	})
 
 	it('renders the content of tags without a renderer, warning once', () => {
@@ -327,6 +344,42 @@ describe('instances', () => {
 		const json = createTestI18n({ bn: () => import('./fixtures/bn.json') })
 		await json.load('bn')
 		expect(json.getMessages('bn')).toHaveProperty('plain', 'সাধারণ লেখা')
+	})
+
+	it('keeps messages added while a loader is in flight', async () => {
+		const bn = deferred<unknown>()
+		const i18n = createTestI18n({ bn: () => bn.promise })
+		const loading = i18n.load('bn')
+		i18n.addMessages('bn', { plain: 'added' })
+		bn.resolve({ default: { plain: 'loaded' } })
+		await loading
+		expect(i18n.getMessages('bn')).toEqual({ plain: 'added' })
+	})
+
+	it('notifies subscribers when loaded messages are replaced, not when a locale is added', async () => {
+		const i18n = createTestI18n()
+		const clone = i18n.clone()
+		const listener = vi.fn()
+		const cloneListener = vi.fn()
+		const unsubscribe = i18n.subscribe(listener)
+		const unsubscribeClone = clone.subscribe(cloneListener)
+
+		i18n.addMessages('bn', { plain: 'added' })
+		expect(listener).not.toHaveBeenCalled()
+
+		const before = i18n.getSnapshot()
+		i18n.addMessages('en', { plain: 'Replaced' })
+		expect(listener).toHaveBeenCalledOnce()
+		expect(cloneListener).toHaveBeenCalledOnce()
+		expect(i18n.getSnapshot()).not.toBe(before)
+		expect(i18n.getSnapshot()).toEqual(before)
+		expect(loose(i18n.t)('plain')).toBe('Replaced')
+
+		unsubscribe()
+		unsubscribeClone()
+		i18n.addMessages('en', { plain: 'Again' })
+		expect(listener).toHaveBeenCalledOnce()
+		expect(cloneListener).toHaveBeenCalledOnce()
 	})
 
 	it('never serves stale lookups after messages change', async () => {

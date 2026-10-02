@@ -202,7 +202,7 @@ format.displayName('bn', { type: 'language' })         // Bangla
 |---|---|
 | `navigatorDetector()` | `navigator.languages` |
 | `storageDetector(key = 'locale')` | `localStorage` (or any `Storage`) |
-| `cookieDetector(name = 'locale', { maxAge, path, sameSite })` | `document.cookie`, which a server can read too |
+| `cookieDetector(name = 'locale', { maxAge, path, sameSite, secure })` | `document.cookie`, which a server can read too. `secure` defaults to `true` with `sameSite: 'none'` |
 | `queryDetector(param = 'lang')` | `?lang=bn` |
 | `htmlLangDetector()` | `<html lang>` |
 | `{ detect, persist? }` | anything you like |

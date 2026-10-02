@@ -240,6 +240,18 @@ describe('locale prop', () => {
 		expect(text('greeting')).toBe('مرحبا، Ada!')
 	})
 
+	it('re-renders when the active locale\'s messages are replaced', () => {
+		const i18n = createTestI18n()
+		render(
+			<I18nProvider i18n={i18n} detect={false}>
+				<Greeting />
+			</I18nProvider>
+		)
+		expect(text('greeting')).toBe('Hello, Ada!')
+		act(() => i18n.addMessages('en', { greeting: 'Hi, {name}!' }))
+		expect(text('greeting')).toBe('Hi, Ada!')
+	})
+
 	it('uses messages passed from the server instead of loading them', () => {
 		const loader = vi.fn(() => Promise.resolve({ greeting: 'loaded' }))
 		const i18n = createTestI18n({ bn: loader })

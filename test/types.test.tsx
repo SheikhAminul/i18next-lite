@@ -46,8 +46,35 @@ describe('types', () => {
 		t('inbox', { count: 2 })
 		// @ts-expect-error count is required
 		t('inbox')
+		t('inbox', { count: 2n })
 		// @ts-expect-error count must be a number
 		t('inbox', { count: '2' })
+	})
+
+	it('types params and tags exactly as the parser reads them', () => {
+		const { t } = createI18n({
+			defaultLocale: 'en',
+			locales: {
+				en: {
+					unread: 'You have {count} unread',
+					spaced: 'One<br />Two <b >bold</b >',
+					text: 'Use {curly braces}, {} and a < b > c',
+					doubled: '{{name}}',
+					attr: '<a href>x</a>'
+				}
+			}
+		})
+		t('unread', { count: 2 })
+		// @ts-expect-error {count} is an ordinary, required param outside plurals
+		t('unread')
+		t.rich('spaced', { br: <br />, b: <b /> })
+		// @ts-expect-error renderers are keyed by the bare tag name
+		t.rich('spaced', { 'br ': <br />, b: <b /> })
+		t('text')
+		t.rich('attr')
+		t('doubled', { name: 'x' })
+		// @ts-expect-error `{{name}}` is the param `name`
+		t('doubled', { '{name': 'x' })
 	})
 
 	it('types rich text values and tag renderers', () => {

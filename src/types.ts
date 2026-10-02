@@ -57,14 +57,38 @@ export type MessageAt<T, K extends string> = K extends keyof T
 
 type MessageText<V> = [V] extends [PluralMessage] ? V[keyof V] & string : [V] extends [string] ? V : string
 
-type ParamNames<S extends string> = S extends `${string}{${infer Name}}${infer Rest}` ? Name | ParamNames<Rest> : never
+type Whitespace = ' ' | '\t' | '\n' | '\r'
+type TrimEnd<S extends string> = S extends `${infer Rest}${Whitespace}` ? TrimEnd<Rest> : S
 
+// These mirror the parser's TOKEN pattern in message.ts, so the types ask for exactly what gets rendered.
+
+/** `{name}` params. Names have no whitespace or braces: `{a b}` and `{}` stay text, and `{{a}}` is the param `a`. */
+type ParamNames<S extends string> = S extends `${string}{${infer Name}}${infer Rest}`
+	? Name extends `${string}{${infer Inner}`
+		? ParamNames<`{${Inner}}${Rest}`>
+		: (Name extends '' | `${string}${Whitespace}${string}` ? never : Name) | ParamNames<Rest>
+	: never
+
+/** A tag name starts with a letter and has no whitespace or `/`, e.g. `link`, not `a href`. */
+type ValidTagName<Name extends string> = Name extends `${infer First}${string}`
+	? Lowercase<First> extends Uppercase<First>
+		? never
+		: Name extends `${string}${Whitespace | '/'}${string}`
+			? never
+			: Name
+	: never
+
+/** Tag names of `<tag>` and `<tag/>` (whitespace before `>` or `/>` allowed, so `<br />` is `br`). */
 type TagNames<S extends string> = S extends `${string}<${infer Tag}>${infer Rest}`
-	? (Tag extends `/${string}` ? never : Tag extends `${infer Name}/` ? Name : Tag) | TagNames<Rest>
+	? Tag extends `${string}<${infer Inner}`
+		? TagNames<`<${Inner}>${Rest}`>
+		: (Tag extends `/${string}` ? never : ValidTagName<TrimEnd<Tag extends `${infer Name}/` ? Name : Tag>>) | TagNames<Rest>
 	: never
 
 type IsLoose<S extends string> = string extends S ? true : false
-type CountParam<V> = [V] extends [PluralMessage] ? { readonly count: number } : {}
+type CountParam<V> = [V] extends [PluralMessage] ? { readonly count: number | bigint } : {}
+/** A plural's `count` comes from `CountParam`; in any other message `{count}` is an ordinary param. */
+type NamedParams<V> = [V] extends [PluralMessage] ? Exclude<ParamNames<MessageText<V>>, 'count'> : ParamNames<MessageText<V>>
 
 type LooseParams = { readonly [name: string]: ParamValue }
 type LooseRichValues = { readonly [name: string]: ParamValue | ReactNode | RichTag }
@@ -72,12 +96,12 @@ type LooseRichValues = { readonly [name: string]: ParamValue | ReactNode | RichT
 export type ParamsOf<V> = CountParam<V> &
 	(IsLoose<MessageText<V>> extends true
 		? LooseParams
-		: { readonly [P in Exclude<ParamNames<MessageText<V>>, 'count'>]: ParamValue })
+		: { readonly [P in NamedParams<V>]: ParamValue })
 
 export type RichValuesOf<V> = CountParam<V> &
 	(IsLoose<MessageText<V>> extends true
 		? LooseRichValues
-		: { readonly [P in Exclude<ParamNames<MessageText<V>>, 'count'>]: ParamValue | ReactNode } & {
+		: { readonly [P in NamedParams<V>]: ParamValue | ReactNode } & {
 				readonly [T in TagNames<MessageText<V>>]: RichTag
 			})
 

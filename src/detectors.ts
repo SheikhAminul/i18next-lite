@@ -26,13 +26,18 @@ export interface CookieOptions {
 	maxAge?: number
 	path?: string
 	sameSite?: 'lax' | 'strict' | 'none'
+	/** Send only over HTTPS. Defaults to `true` for `sameSite: 'none'`, which browsers reject without it. */
+	secure?: boolean
 }
 
 /**
  * A locale saved in a cookie. Remembers the user's choice, and unlike storage the server can read it too,
  * e.g. in a Next.js `proxy.ts`/middleware.
  */
-export const cookieDetector = (name = 'locale', { maxAge = 31_536_000, path = '/', sameSite = 'lax' }: CookieOptions = {}): LocaleDetector => {
+export const cookieDetector = (
+	name = 'locale',
+	{ maxAge = 31_536_000, path = '/', sameSite = 'lax', secure = sameSite === 'none' }: CookieOptions = {}
+): LocaleDetector => {
 	const prefix = `${encodeURIComponent(name)}=`
 	return {
 		detect: () =>
@@ -42,7 +47,7 @@ export const cookieDetector = (name = 'locale', { maxAge = 31_536_000, path = '/
 			}),
 		persist: locale =>
 			void attempt(() => {
-				document.cookie = `${prefix}${encodeURIComponent(locale)}; Max-Age=${maxAge}; Path=${path}; SameSite=${sameSite}`
+				document.cookie = `${prefix}${encodeURIComponent(locale)}; Max-Age=${maxAge}; Path=${path}; SameSite=${sameSite}${secure ? '; Secure' : ''}`
 			})
 	}
 }

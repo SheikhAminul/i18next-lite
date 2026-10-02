@@ -44,6 +44,18 @@ describe('detectors', () => {
 		expect(cookieDetector('other').detect()).toBeUndefined()
 	})
 
+	it('cookieDetector marks SameSite=None cookies Secure, which browsers require', () => {
+		const set = vi.spyOn(document, 'cookie', 'set').mockImplementation(() => {})
+		cookieDetector().persist!('bn')
+		cookieDetector('locale', { sameSite: 'none' }).persist!('bn')
+		cookieDetector('locale', { secure: true }).persist!('bn')
+		expect(set.mock.calls.map(([cookie]) => cookie)).toEqual([
+			'locale=bn; Max-Age=31536000; Path=/; SameSite=lax',
+			'locale=bn; Max-Age=31536000; Path=/; SameSite=none; Secure',
+			'locale=bn; Max-Age=31536000; Path=/; SameSite=lax; Secure'
+		])
+	})
+
 	it('queryDetector reads the query string', () => {
 		history.replaceState(null, '', '/?lang=ar&x=1')
 		expect(queryDetector().detect()).toBe('ar')
