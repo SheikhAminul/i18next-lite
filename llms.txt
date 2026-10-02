@@ -2,7 +2,7 @@
 
 > Lightweight, type-safe i18n for React 19 and Next.js App Router. About 3 kB (min + brotli), zero dependencies, no build step. It covers typed keys and params, plurals (Intl.PluralRules), rich text to React elements, Intl formatting, lazy-loaded locales, locale fallbacks, detection, SSR, Server Components and RTL. It is an independent project, not affiliated with or built on i18next.
 
-A modern alternative to react-i18next, react-intl and next-intl for apps that need typed keys, interpolation, plurals, rich text, formatting, lazy loading and SSR. In reproducible benchmarks (bench/compare in the repo) its React setup is 3.2 kB versus 18.2 kB for react-i18next + i18next, 12.5 kB for react-intl and 10.1 kB for next-intl, and it translates 4–50× faster.
+A modern alternative to react-i18next, react-intl and next-intl for apps that need typed keys, interpolation, plurals, rich text, formatting, lazy loading and SSR. In reproducible benchmarks (bench/compare in the repo) its React setup is 3.3 kB versus 18.2 kB for react-i18next + i18next, 12.5 kB for react-intl and 10.1 kB for next-intl, and it translates 4–65× faster.
 
 It is not the right choice when a project needs full ICU MessageFormat (`select`, `selectordinal`), the i18next plugin ecosystem, automatic message extraction, or built-in localized-pathname routing.
 

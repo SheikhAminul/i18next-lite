@@ -7,7 +7,7 @@ i18next-lite
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](https://github.com/SheikhAminul/i18next-lite/blob/main/LICENSE)
 
 **A lightweight, modern alternative to react-i18next, react-intl and next-intl** for **React 19** and **Next.js App Router**.
-It is about 3 kB with zero dependencies and fully type-safe, it works in Server Components, and it translates 4–50× faster than those libraries in [reproducible benchmarks](#comparison).
+It is about 3 kB with zero dependencies and fully type-safe, it works in Server Components, and it translates 4–65× faster than those libraries in [reproducible benchmarks](#comparison).
 
 ```tsx
 const translate = useTranslator()
@@ -47,11 +47,11 @@ Each library was measured with the same tooling and the same messages, and each 
 
 | | i18next-lite 3 | react-i18next 17 + i18next 26 | react-intl 12 | next-intl 4 | Lingui 6 |
 |---|---|---|---|---|---|
-| **Bundle**: provider, hook, rich-text component (min + brotli) | **3.2 kB** | 18.2 kB | 12.5 kB | 10.1 kB | 3.4 kB¹ |
+| **Bundle**: provider, hook, rich-text component (min + brotli) | **3.3 kB** | 18.2 kB | 12.5 kB | 10.1 kB | 3.4 kB¹ |
 | **Direct dependencies** | **0** | 3 | 3 | 10 | 3 |
-| **`translate('key')`** (ops/sec) | **20 M** | 0.4 M | 1.3 M | 4.5 M | – |
-| **`translate('key', { name })`** | **13 M** | 0.3 M | 0.9 M | 0.3 M | – |
-| **plural** | **1.5 M** | 0.16 M | 0.27 M | 0.16 M | – |
+| **`translate('key')`** (ops/sec) | **19 M** | 0.4 M | 1.4 M | 4.4 M | – |
+| **`translate('key', { name })`** | **10 M** | 0.26 M | 0.86 M | 0.27 M | – |
+| **plural** | **9.9 M** | 0.15 M | 0.26 M | 0.15 M | – |
 | Server Components | ✓ | ✓ | ✓ | ✓ | ✓ |
 | Works without a build step | ✓ | ✓ | ✓ | ✓ | –¹ |
 | Full ICU MessageFormat (`select`, ordinals) | – | via plugin | ✓ | ✓ | ✓ |
@@ -325,18 +325,21 @@ How it fits together:
 
 | Call | ops/sec |
 |---|---|
-| `translate('plain')` | ~19 M |
+| `translate('plain')` | ~18 M |
 | `translate('home.nested.deep', { value })` | ~15 M |
-| namespaced `translate('title')` | ~23 M |
-| fallback chain `bn-BD → bn → en` | ~22 M |
+| namespaced `translate('title')` | ~19 M |
+| fallback chain `bn-BD → bn → en` | ~19 M |
 | `translate('greeting', { name })` | ~11 M |
-| `translate('total', { amount: 1234.5 })` (number formatting) | ~2 M |
-| `translate('inbox', { count })` (plural) | ~1.5 M |
-| `translate.rich(...)` with two elements | ~330 k |
+| `translate('total', { amount: 1234.5 })` (number formatting) | ~10 M |
+| `translate('inbox', { count })` (plural) | ~9 M |
+| plural with a count never seen before | ~1.1 M |
+| `translate.rich(...)` with two elements | ~320 k |
 
 Why it's fast:
 - Each key walks the fallback chain once per translator and is then a single `Map` lookup. The memo is cleared only when messages change.
 - Messages without `{` or `<` are returned as-is, never parsed or copied. Parsed trees are shared across locales and namespaces.
+- `Intl` calls cost hundreds of nanoseconds, so interpolated numbers and plural categories are remembered per locale. Counts repeat, so most plural calls skip `Intl` entirely.
+- Every cache is capped, so memory stays flat on a long-running server even when locales, options or numbers come from user input.
 - The store lives outside React and is read with `useSyncExternalStore`. The context value never changes, so components re-render only when the locale does, not when a parent re-renders.
 
 ## Migrating from other libraries

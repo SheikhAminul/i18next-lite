@@ -1,5 +1,5 @@
 import { cloneElement, createElement, Fragment, isValidElement, type ReactNode } from 'react'
-import { formatValue, pluralRules } from './format.js'
+import { formatValue, pluralRules, reuse } from './format.js'
 import type { ParamValue, PluralCategory, PluralMessage } from './types.js'
 
 export type Node = string | { readonly param: string } | { readonly tag: string; readonly children: readonly Node[] }
@@ -46,12 +46,7 @@ const parse = (message: string): readonly Node[] => {
 const parsed = new Map<string, readonly Node[]>()
 
 /** Most messages are plain text: they skip parsing, and the memory for a tree, entirely. */
-export const compile = (message: string): Compiled => {
-	if (!MARKUP.test(message)) return message
-	let nodes = parsed.get(message)
-	if (!nodes) parsed.set(message, (nodes = parse(message)))
-	return nodes
-}
+export const compile = (message: string): Compiled => (MARKUP.test(message) ? reuse(parsed, message, parse) : message)
 
 const isParamValue = (value: unknown): value is ParamValue =>
 	typeof value === 'string' || typeof value === 'number' || typeof value === 'bigint' || value instanceof Date
@@ -108,6 +103,6 @@ export const pluralCategory = (message: PluralMessage, locale: string, count: un
 	if (typeof count !== 'number' && typeof count !== 'bigint') return 'other'
 	const n = Number(count)
 	if (n === 0 && message.zero !== undefined) return 'zero'
-	const category = pluralRules(locale).select(n)
+	const category = pluralRules(locale)(n)
 	return message[category] === undefined ? 'other' : category
 }

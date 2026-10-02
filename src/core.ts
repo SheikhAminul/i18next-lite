@@ -1,4 +1,4 @@
-import { createFormatter } from './format.js'
+import { createFormatter, reuse } from './format.js'
 import { matchLocale } from './locale.js'
 import { compile, isPluralMessage, pluralCategory, renderRich, renderString, toNode, type Compiled } from './message.js'
 import type {
@@ -69,17 +69,13 @@ const warnOnce = (shared: Shared, id: string, message: string) => {
 }
 
 /** `locale`, its configured fallbacks, its base language, then the default locale. */
-const chainOf = (shared: Shared, locale: string): readonly string[] => {
-	let chain = shared.chains.get(locale)
-	if (!chain) {
+const chainOf = (shared: Shared, locale: string): readonly string[] =>
+	reuse(shared.chains, locale, () => {
 		const { fallbacks, defaultLocale } = shared.config
 		const base = locale.split('-')[0]!.toLowerCase()
 		const baseLocale = shared.locales.find(candidate => candidate.toLowerCase() === base)
-		chain = [...new Set([locale, ...(fallbacks?.[locale] ?? []), ...(baseLocale ? [baseLocale] : []), defaultLocale])]
-		shared.chains.set(locale, chain)
-	}
-	return chain
-}
+		return [...new Set([locale, ...(fallbacks?.[locale] ?? []), ...(baseLocale ? [baseLocale] : []), defaultLocale])]
+	})
 
 const isLoaded = (shared: Shared, locale: string) => chainOf(shared, locale).every(entry => shared.loaded.has(entry))
 
@@ -193,19 +189,10 @@ const createTranslator = (shared: Shared, locale: string, namespace: string | un
 	return translate as unknown as Translator
 }
 
-const getTranslator = (shared: Shared, locale: string, namespace?: string): Translator => {
-	let byNamespace = shared.translators.get(locale)
-	if (!byNamespace) shared.translators.set(locale, (byNamespace = new Map()))
-	let translator = byNamespace.get(namespace ?? '')
-	if (!translator) byNamespace.set(namespace ?? '', (translator = createTranslator(shared, locale, namespace)))
-	return translator
-}
+const getTranslator = (shared: Shared, locale: string, namespace?: string): Translator =>
+	reuse(reuse(shared.translators, locale, () => new Map()), namespace ?? '', () => createTranslator(shared, locale, namespace))
 
-const getFormatter = (shared: Shared, locale: string): Formatter => {
-	let formatter = shared.formatters.get(locale)
-	if (!formatter) shared.formatters.set(locale, (formatter = createFormatter(locale)))
-	return formatter
-}
+const getFormatter = (shared: Shared, locale: string): Formatter => reuse(shared.formatters, locale, createFormatter)
 
 const createInstance = (shared: Shared, requested: string | undefined): I18n => {
 	const { config, locales } = shared

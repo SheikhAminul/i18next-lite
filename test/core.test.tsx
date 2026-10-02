@@ -52,6 +52,23 @@ describe('translate', () => {
 		expect(bn('total', { amount: 1234 })).toBe('মোট: ১,২৩৪')
 	})
 
+	it('stays exact past the cache limits, for numbers, plurals and locales', () => {
+		const i18n = createTestI18n()
+		const format = new Intl.NumberFormat('en')
+		for (let n = 0; n < 1200; n++) {
+			expect(translate('total', { amount: n + 0.25 })).toBe(`Total: ${format.format(n + 0.25)}`)
+			expect(translate('inbox', { count: n })).toBe(n === 0 ? 'No messages' : `You have ${format.format(n)} message${n === 1 ? '' : 's'}`)
+			expect(i18n.formatter(`en-x-${n}`).locale).toBe(`en-x-${n}`)
+		}
+		expect(i18n.formatter('en').number(1234.5)).toBe('1,234.5')
+		expect(translate('total', { amount: 10n })).toBe('Total: 10')
+	})
+
+	it('renders -0 as 0', () => {
+		expect(translate('total', { amount: -0 })).toBe('Total: 0')
+		expect(translate('total', { amount: 0 })).toBe('Total: 0')
+	})
+
 	it('strips rich-text tags in plain strings', () => {
 		expect(translate('terms')).toBe('Read the terms and agree.')
 		expect(translate('lines')).toBe('OneTwo')
