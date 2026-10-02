@@ -6,8 +6,9 @@ export { getDirection, matchLocale, negotiateLocale, parseAcceptLanguage } from 
 export type * from './types.js'
 
 /**
- * Register your instance once to get typed keys, params and locales from the React hooks:
+ * Register your instance once to get typed keys, params and locales from the React hooks.
  *
+ * @example
  * ```ts
  * declare module 'i18next-lite' {
  *   interface Register {

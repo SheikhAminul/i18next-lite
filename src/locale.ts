@@ -12,6 +12,14 @@ const normalizeAll = (locales: readonly string[]) => {
  * Best match for `requested` among `available`, following the BCP 47 lookup algorithm.
  * Each preference is tried in order: exact match, then dropping subtags (`zh-Hant-TW` → `zh-Hant` → `zh`),
  * then any available locale with the same language (`en` → `en-US`).
+ *
+ * @example
+ * ```ts
+ * matchLocale('en-GB', ['en', 'bn']) // 'en'
+ * matchLocale('en', ['en-US', 'bn']) // 'en-US'
+ * matchLocale(['fr', 'bn-BD'], ['en', 'bn']) // 'bn'
+ * matchLocale('fr', ['en', 'bn']) // undefined
+ * ```
  */
 export const matchLocale = <L extends string>(
 	requested: string | readonly string[] | null | undefined,
@@ -34,7 +42,14 @@ export const matchLocale = <L extends string>(
 	return undefined
 }
 
-/** Locales from an `Accept-Language` header, most preferred first. */
+/**
+ * Locales from an `Accept-Language` header, most preferred first.
+ *
+ * @example
+ * ```ts
+ * parseAcceptLanguage('en-US,en;q=0.9,bn;q=0.8') // ['en-US', 'en', 'bn']
+ * ```
+ */
 export const parseAcceptLanguage = (header: string | null | undefined): string[] => {
 	if (!header) return []
 	return header
@@ -49,7 +64,17 @@ export const parseAcceptLanguage = (header: string | null | undefined): string[]
 		.map(({ tag }) => tag)
 }
 
-/** Best registered locale for an `Accept-Language` header, or `fallback`. Handy in Next.js `proxy.ts`/middleware. */
+/**
+ * Best registered locale for an `Accept-Language` header, or `fallback`. Handy in Next.js `proxy.ts`/middleware.
+ *
+ * @example
+ * ```ts
+ * negotiateLocale('bn-BD,bn;q=0.9,en;q=0.8', ['en', 'bn'], 'en') // 'bn'
+ *
+ * // proxy.ts
+ * const locale = negotiateLocale(request.headers.get('accept-language'), i18n.locales, i18n.defaultLocale)
+ * ```
+ */
 export const negotiateLocale = <L extends string>(acceptLanguage: string | null | undefined, available: readonly L[], fallback: L): L =>
 	matchLocale(parseAcceptLanguage(acceptLanguage), available) ?? fallback
 
@@ -59,6 +84,13 @@ const RTL_SCRIPTS = new Set(['adlm', 'arab', 'hebr', 'nkoo', 'rohg', 'syrc', 'th
 /**
  * Text direction of a locale. Uses a fixed table rather than `Intl.Locale#getTextInfo`
  * (not available in every engine) so server and client always agree.
+ *
+ * @example
+ * ```tsx
+ * getDirection('ar') // 'rtl'
+ * getDirection('en-US') // 'ltr'
+ * <html lang={lang} dir={getDirection(lang)}>
+ * ```
  */
 export const getDirection = (locale: string): 'ltr' | 'rtl' => {
 	const [language = '', ...subtags] = normalize(locale).split('-')

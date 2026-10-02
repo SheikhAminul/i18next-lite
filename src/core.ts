@@ -311,13 +311,24 @@ const createInstance = (shared: Shared, requested: string | undefined): I18n => 
 }
 
 /**
- * Create an i18n instance.
+ * Create an i18n instance. It works anywhere: Server Components, route handlers, middleware and the browser.
  *
+ * @example
  * ```ts
+ * const en = { greeting: 'Hello, {name}!' } as const
+ *
  * export const i18n = createI18n({
  *   defaultLocale: 'en',
- *   locales: { en, bn: () => import('./locales/bn.json') }
+ *   locales: { en, bn: () => import('./locales/bn.json') }, // lazy locales are code-split
+ *   detectors: [storageDetector(), navigatorDetector()]
  * })
+ *
+ * // Once per app, for typed keys and params in the React hooks:
+ * declare module 'i18next-lite' {
+ *   interface Register {
+ *     i18n: typeof i18n
+ *   }
+ * }
  * ```
  */
 export const createI18n = <const Locales extends Record<string, LocaleSource>, D extends keyof Locales & string>(

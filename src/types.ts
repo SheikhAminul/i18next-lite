@@ -1,13 +1,28 @@
 import type { ReactElement, ReactNode } from 'react'
 
-/** A tree of messages. Leaves are strings or plural objects. */
+/**
+ * A tree of messages. Leaves are strings or plural objects.
+ *
+ * @example
+ * ```ts
+ * const en = {
+ *   greeting: 'Hello, {name}!', // t('greeting', { name: 'Ada' })
+ *   inbox: { zero: 'No messages', one: '{count} message', other: '{count} messages' }, // t('inbox', { count: 3 })
+ *   terms: 'Read the <link>terms</link>.', // t.rich('terms', { link: <a href="/terms" /> })
+ *   settings: { title: 'Settings' } // t('settings.title'), or useT('settings')('title')
+ * } as const // keeps the literal strings, so keys and params are type-checked
+ * ```
+ */
 export interface Messages {
 	readonly [key: string]: string | Messages
 }
 
 export type PluralCategory = Intl.LDMLPluralRule
 
-/** A message whose form is picked by `count`, e.g. `{ one: '{count} file', other: '{count} files' }`. */
+/**
+ * A message whose form is picked by `count` with `Intl.PluralRules`, e.g. `{ one: '{count} file', other: '{count} files' }`.
+ * `zero` is used for a count of 0 whenever it is present, even in languages whose plural rules have no `zero` form.
+ */
 export type PluralMessage = { readonly other: string } & {
 	readonly [C in Exclude<PluralCategory, 'other'>]?: string
 }
@@ -109,9 +124,27 @@ export type RichValuesOf<V> = CountParam<V> &
 type Args<P> = {} extends P ? [params?: P] : [params: P]
 
 export interface Translator<M = Messages> {
-	/** Translate `key` to a plain string. Tags such as `<b>` are stripped; use `t.rich` to render them. */
+	/**
+	 * Translate `key` to a plain string. Tags such as `<b>` are stripped; use `t.rich` to render them.
+	 *
+	 * @example
+	 * ```ts
+	 * t('greeting', { name: 'Ada' }) // 'Hello, {name}!' → 'Hello, Ada!'
+	 * t('inbox', { count: 3 }) // plural message → '3 messages'
+	 * t('settings.title') // nested key
+	 * ```
+	 */
 	<K extends MessageKey<M>>(key: K, ...params: Args<ParamsOf<MessageAt<M, K>>>): string
-	/** Translate `key` to React nodes, rendering `<tag>` markup with the matching value from `values`. */
+	/**
+	 * Translate `key` to React nodes, rendering `<tag>` markup with the matching value from `values`.
+	 *
+	 * @example
+	 * ```tsx
+	 * // 'Read the <link>terms</link>.'
+	 * t.rich('terms', { link: <a href="/terms" /> })
+	 * t.rich('terms', { link: chunks => <a href="/terms">{chunks}</a> })
+	 * ```
+	 */
 	rich<K extends MessageKey<M>>(key: K, ...values: Args<RichValuesOf<MessageAt<M, K>>>): ReactNode
 	/** Whether `key` resolves to a message in this locale or one of its fallbacks. */
 	has(key: string): boolean
@@ -119,6 +152,18 @@ export interface Translator<M = Messages> {
 	readonly namespace: string | undefined
 }
 
+/**
+ * `Intl` formatters for one locale. Get one from `useFormat()`, `i18n.format` or `i18n.formatter(locale)`.
+ *
+ * @example
+ * ```ts
+ * format.number(1234.5, { style: 'currency', currency: 'EUR' }) // '€1,234.50'
+ * format.date(new Date(), { dateStyle: 'long' })
+ * format.relativeTime(-1, 'day', { numeric: 'auto' }) // 'yesterday'
+ * format.list(['a', 'b', 'c']) // 'a, b, and c'
+ * format.displayName('bn', { type: 'language' }) // 'Bangla'
+ * ```
+ */
 export interface Formatter {
 	readonly locale: string
 	number(value: number | bigint, options?: Intl.NumberFormatOptions): string
@@ -128,7 +173,14 @@ export interface Formatter {
 	displayName(code: string, options: Intl.DisplayNamesOptions): string | undefined
 }
 
-/** Reads a preferred locale from somewhere (navigator, storage, cookie, URL) and optionally remembers changes. */
+/**
+ * Reads a preferred locale from somewhere (navigator, storage, cookie, URL) and optionally remembers changes.
+ *
+ * @example
+ * ```ts
+ * const subdomainDetector: LocaleDetector = { detect: () => location.hostname.split('.')[0] }
+ * ```
+ */
 export interface LocaleDetector {
 	detect(): string | readonly string[] | null | undefined
 	persist?(locale: string): void
@@ -172,7 +224,16 @@ export interface I18n<L extends string = string, M = Messages> {
 	addMessages(locale: L, messages: Messages): void
 	/** The loaded messages for a locale, if any. */
 	getMessages(locale: L): Messages | undefined
-	/** Load `locale` and return a translator bound to it. Does not change the active locale. Ideal for Server Components. */
+	/**
+	 * Load `locale` and return a translator bound to it. Does not change the active locale. Ideal for Server Components.
+	 *
+	 * @example
+	 * ```tsx
+	 * // app/[lang]/page.tsx
+	 * const t = await i18n.getT(lang, 'home')
+	 * return <h1>{t('title')}</h1>
+	 * ```
+	 */
 	getT<N extends Namespace<M> | undefined = undefined>(
 		locale?: string,
 		namespace?: N
@@ -182,10 +243,12 @@ export interface I18n<L extends string = string, M = Messages> {
 		locale: L,
 		namespace?: N
 	): Translator<N extends string ? MessageAt<M, N> : M>
+	/** A formatter for any locale, e.g. `i18n.formatter(t.locale)` in a Server Component. */
 	formatter(locale: string): Formatter
 
 	/** A new instance with its own active locale that shares this one's config and loaded messages. */
 	clone(options?: { locale?: string }): I18n<L, M>
+	/** `subscribe` and `getSnapshot` follow the `useSyncExternalStore` contract; the React bindings use them. */
 	subscribe(listener: () => void): () => void
 	getSnapshot(): I18nSnapshot<L>
 }

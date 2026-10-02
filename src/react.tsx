@@ -27,6 +27,18 @@ export interface I18nProviderProps {
 /**
  * Makes an i18n instance available to the hooks below. Suspends until the initial locale's messages are loaded,
  * so wrap it in `<Suspense>` when any locale is lazy.
+ *
+ * @example
+ * ```tsx
+ * <Suspense fallback={null}>
+ *   <I18nProvider i18n={i18n}>
+ *     <App />
+ *   </I18nProvider>
+ * </Suspense>
+ *
+ * // Next.js App Router: in a 'use client' file rendered by app/[lang]/layout.tsx
+ * <I18nProvider i18n={i18n} locale={lang}>{children}</I18nProvider>
+ * ```
  */
 export const I18nProvider = ({ i18n, locale, messages, detect = true, syncDocument = true, children }: I18nProviderProps) => {
 	if (messages) {
@@ -66,6 +78,16 @@ type Scoped<N> = N extends string ? MessageAt<RegisteredMessages, N> : Registere
 /**
  * A translator for the active locale. Re-renders only when the locale changes, and its identity is stable per
  * locale, so it is safe in dependency arrays. Pass a namespace to scope keys: `useT('settings')('title')`.
+ *
+ * @example
+ * ```tsx
+ * const t = useT()
+ * t('greeting', { name: 'Ada' })
+ * t.rich('terms', { link: <a href="/terms" /> })
+ *
+ * const ts = useT('settings')
+ * ts('title') // same as t('settings.title')
+ * ```
  */
 export const useT = <N extends Namespace<RegisteredMessages> | undefined = undefined>(namespace?: N): Translator<Scoped<N>> => {
 	const instance = useInstance('useT')
@@ -73,7 +95,19 @@ export const useT = <N extends Namespace<RegisteredMessages> | undefined = undef
 	return instance.translator(locale, namespace as never) as Translator<Scoped<N>>
 }
 
-/** Locale state and controls, e.g. for a language switcher. */
+/**
+ * Locale state and controls, e.g. for a language switcher. Under a provider with a pinned `locale` (e.g. a Next.js
+ * `[lang]` route), switch by navigating to the other locale's URL instead of calling `setLocale`.
+ *
+ * @example
+ * ```tsx
+ * const { locale, locales, setLocale, isPending } = useI18n()
+ *
+ * <select value={locale} disabled={isPending} onChange={event => setLocale(event.target.value)}>
+ *   {locales.map(option => <option key={option}>{option}</option>)}
+ * </select>
+ * ```
+ */
 export const useI18n = () => {
 	const instance = useInstance('useI18n')
 	const snapshot = useSnapshot(instance)
@@ -93,7 +127,16 @@ export const useI18n = () => {
 	)
 }
 
-/** `Intl` formatters (number, date, relative time, list, display names) for the active locale. */
+/**
+ * `Intl` formatters (number, date, relative time, list, display names) for the active locale.
+ *
+ * @example
+ * ```tsx
+ * const format = useFormat()
+ * format.number(0.25, { style: 'percent' }) // '25%'
+ * format.date(post.createdAt, { dateStyle: 'medium' })
+ * ```
+ */
 export const useFormat = (): Formatter => {
 	const instance = useInstance('useFormat')
 	const { locale } = useSnapshot(instance)
@@ -108,11 +151,13 @@ export type TransProps<K extends Key> = { i18nKey: K } & ({} extends TransValues
 	: { values: TransValues<K> })
 
 /**
- * Renders a message with React elements in it:
+ * Renders a message with React elements in it. The component form of `t.rich`.
  *
+ * @example
  * ```tsx
  * // "Read the <link>terms</link>, {name}."
  * <Trans i18nKey="terms" values={{ name: <b>Ada</b>, link: <a href="/terms" /> }} />
+ * <Trans i18nKey="terms" values={{ name: 'Ada', link: chunks => <a href="/terms">{chunks}</a> }} />
  * ```
  */
 export const Trans = <K extends Key>({ i18nKey, values }: TransProps<K>): ReactNode =>

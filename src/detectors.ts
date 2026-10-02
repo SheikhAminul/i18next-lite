@@ -33,6 +33,14 @@ export interface CookieOptions {
 /**
  * A locale saved in a cookie. Remembers the user's choice, and unlike storage the server can read it too,
  * e.g. in a Next.js `proxy.ts`/middleware.
+ *
+ * @example
+ * ```ts
+ * createI18n({ defaultLocale: 'en', locales: { en, bn }, detectors: [cookieDetector('NEXT_LOCALE'), navigatorDetector()] })
+ *
+ * // proxy.ts
+ * const saved = i18n.match(request.cookies.get('NEXT_LOCALE')?.value)
+ * ```
  */
 export const cookieDetector = (
 	name = 'locale',
