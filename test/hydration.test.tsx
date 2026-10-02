@@ -3,7 +3,7 @@ import { hydrateRoot } from 'react-dom/client'
 import { renderToString } from 'react-dom/server'
 import { afterEach, expect, it, vi } from 'vitest'
 import { storageDetector } from '../src/index.js'
-import { I18nProvider, useI18n, useT } from '../src/react.js'
+import { I18nProvider, useI18n, useTranslator } from '../src/react.js'
 import { createTestI18n, type TestI18n } from './fixtures/i18n.js'
 
 afterEach(() => localStorage.clear())
@@ -15,11 +15,11 @@ const App = ({ i18n }: { i18n: TestI18n }) => (
 )
 
 const Page = () => {
-	const t = useT()
+	const translate = useTranslator()
 	const { locale, dir } = useI18n()
 	return (
 		<p lang={locale} dir={dir}>
-			{t('greeting', { name: 'Ada' })}
+			{translate('greeting', { name: 'Ada' })}
 		</p>
 	)
 }

@@ -2,7 +2,7 @@ import { act, cleanup, render, renderHook, screen } from '@testing-library/react
 import { Component, Suspense, type ReactNode } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { storageDetector } from '../src/index.js'
-import { I18nProvider, Trans, useFormat, useI18n, useT } from '../src/react.js'
+import { I18nProvider, Translate, useFormat, useI18n, useTranslator } from '../src/react.js'
 import { createTestI18n, deferred, type TestI18n } from './fixtures/i18n.js'
 
 afterEach(() => {
@@ -14,8 +14,8 @@ afterEach(() => {
 })
 
 const Greeting = () => {
-	const t = useT()
-	return <p data-testid="greeting">{t('greeting', { name: 'Ada' })}</p>
+	const translate = useTranslator()
+	return <p data-testid="greeting">{translate('greeting', { name: 'Ada' })}</p>
 }
 
 const Switcher = () => {
@@ -112,10 +112,10 @@ describe('I18nProvider + hooks', () => {
 		expect(screen.getByRole('alert').textContent).toBe('offline')
 	})
 
-	it('scopes useT to a namespace', () => {
+	it('scopes useTranslator to a namespace', () => {
 		const Home = () => {
-			const t = useT('home')
-			return <h1>{t('subtitle', { user: 'ada' })}</h1>
+			const translate = useTranslator('home')
+			return <h1>{translate('subtitle', { user: 'ada' })}</h1>
 		}
 		render(
 			<I18nProvider i18n={createTestI18n()}>
@@ -127,7 +127,7 @@ describe('I18nProvider + hooks', () => {
 
 	it('returns a stable translator between renders', () => {
 		const i18n = createTestI18n()
-		const { result, rerender } = renderHook(() => useT(), {
+		const { result, rerender } = renderHook(() => useTranslator(), {
 			wrapper: ({ children }) => <I18nProvider i18n={i18n}>{children}</I18nProvider>
 		})
 		const first = result.current
@@ -147,16 +147,16 @@ describe('I18nProvider + hooks', () => {
 
 	it('throws a helpful error outside a provider', () => {
 		vi.spyOn(console, 'error').mockImplementation(() => {})
-		expect(() => render(<Greeting />)).toThrow('useT() must be used inside <I18nProvider>')
+		expect(() => render(<Greeting />)).toThrow('useTranslator() must be used inside <I18nProvider>')
 	})
 })
 
-describe('Trans', () => {
+describe('Translate', () => {
 	it('renders rich text with elements and values', () => {
 		const { container } = render(
 			<I18nProvider i18n={createTestI18n()}>
-				<Trans i18nKey="terms" values={{ link: <a href="/terms" />, b: chunks => <strong>{chunks}</strong> }} />
-				<Trans i18nKey="plain" />
+				<Translate i18nKey="terms" values={{ link: <a href="/terms" />, b: chunks => <strong>{chunks}</strong> }} />
+				<Translate i18nKey="plain" />
 			</I18nProvider>
 		)
 		expect(container.innerHTML).toBe('Read the <a href="/terms">terms</a> and <strong>agree</strong>.Plain text')

@@ -13,7 +13,7 @@ npm i i18next-lite   (requires React 19+, ESM only)
 ## Entry points
 
 - `i18next-lite`: server-safe core. `createI18n`, `negotiateLocale`, `matchLocale`, `parseAcceptLanguage`, `getDirection`, and the detectors `navigatorDetector`, `storageDetector`, `cookieDetector`, `queryDetector` and `htmlLangDetector`. Usable in Server Components, `generateMetadata`, route handlers, `proxy.ts`/middleware and Node.
-- `i18next-lite/react`: `'use client'`. `I18nProvider`, `useT`, `useI18n`, `useFormat`, `Trans`.
+- `i18next-lite/react`: `'use client'`. `I18nProvider`, `useTranslator`, `useI18n`, `useFormat`, `Translate`.
 
 ## Setup (React)
 
@@ -42,15 +42,15 @@ declare module 'i18next-lite' {
 ```
 
 ```tsx
-import { I18nProvider, Trans, useI18n, useT } from 'i18next-lite/react'
+import { I18nProvider, Translate, useI18n, useTranslator } from 'i18next-lite/react'
 
 <Suspense fallback={null}><I18nProvider i18n={i18n}><App /></I18nProvider></Suspense>
 
-const t = useT()                          // or useT('settings') for a namespace
-t('greeting', { name: 'Ada' })            // "Hello, Ada!"
-t('inbox', { count: 3 })                  // "3 messages"
-t.rich('terms', { link: <a href="/terms" /> })
-<Trans i18nKey="terms" values={{ link: chunks => <a href="/terms">{chunks}</a> }} />
+const translate = useTranslator()                 // or useTranslator('settings') for a namespace
+translate('greeting', { name: 'Ada' })            // "Hello, Ada!"
+translate('inbox', { count: 3 })                  // "3 messages"
+translate.rich('terms', { link: <a href="/terms" /> })
+<Translate i18nKey="terms" values={{ link: chunks => <a href="/terms">{chunks}</a> }} />
 const { locale, locales, setLocale, isPending, dir } = useI18n()
 ```
 
@@ -58,18 +58,19 @@ const { locale, locales, setLocale, isPending, dir } = useI18n()
 
 - Params: `{name}`. Numbers, bigints and Dates are formatted for the locale.
 - Plurals: an object with `zero`/`one`/`two`/`few`/`many`/`other` keys (`other` required), selected by `count`.
-- Rich text: `<tag>…</tag>` and `<tag/>`, rendered with an element or a `chunks => ReactNode` function. `t()` strips tags.
-- Nesting: `t('settings.title')`.
+- Rich text: `<tag>…</tag>` and `<tag/>`, rendered with an element or a `chunks => ReactNode` function. `translate()` strips tags.
+- Nesting: `translate('settings.title')`.
+- Detection: `detectors` run after hydration; the first registered match wins. `setLocale` choices are saved by detectors with `persist` (storage, cookie); detected locales are not.
 - Fallback chain: `bn-BD` → `bn` → `defaultLocale`. A key missing everywhere returns the key and warns once in development.
 
 ## Setup (Next.js App Router)
 
-- `src/i18n.ts`: `createI18n` plus the `Register` augmentation, as above.
-- `src/proxy.ts`: redirect `/path` to `/{locale}/path`, choosing the locale with `i18n.match(cookie) ?? negotiateLocale(request.headers.get('accept-language'), i18n.locales, i18n.defaultLocale)`.
+- `src/i18n.ts`: `createI18n` plus the `Register` augmentation, as above, and `export const localeCookie = cookieDetector('NEXT_LOCALE')`. The language switcher calls `localeCookie.persist?.(next)` before navigating.
+- `src/proxy.ts`: redirect `/path` to `/{locale}/path`, choosing the locale with `i18n.match(request.cookies.get('NEXT_LOCALE')?.value) ?? negotiateLocale(request.headers.get('accept-language'), i18n.locales, i18n.defaultLocale)`.
 - `src/app/[lang]/layout.tsx`: `generateStaticParams = () => i18n.locales.map(lang => ({ lang }))`. Call `notFound()` unless `i18n.match(lang) === lang`. Render `<html lang={lang} dir={getDirection(lang)}>`.
 - `src/app/[lang]/providers.tsx` (`'use client'`): `<I18nProvider i18n={i18n} locale={lang}>`. Import the instance in this client file; it can't be passed as a prop from the server.
-- Server Components: `const t = await i18n.getT(lang, 'namespace?')`. Use `t()` and `t.rich()`.
-- Client Components: `useT()`. Switch language by navigating to the other locale's URL.
+- Server Components: `const translate = await i18n.loadTranslator(lang)`, or `i18n.loadTranslator(lang, 'home')` for a namespace. Use `translate()` and `translate.rich()`.
+- Client Components: `useTranslator()`. Switch language by navigating to the other locale's URL.
 
 ## Docs
 

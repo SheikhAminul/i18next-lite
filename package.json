@@ -98,7 +98,7 @@
 		{
 			"name": "react bindings",
 			"path": "dist/react.js",
-			"import": "{ I18nProvider, useT, useI18n, useFormat, Trans }",
+			"import": "{ I18nProvider, useTranslator, useI18n, useFormat, Translate }",
 			"ignore": [
 				"react"
 			],

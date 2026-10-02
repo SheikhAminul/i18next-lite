@@ -77,20 +77,20 @@ type Scoped<N> = N extends string ? MessageAt<RegisteredMessages, N> : Registere
 
 /**
  * A translator for the active locale. Re-renders only when the locale changes, and its identity is stable per
- * locale, so it is safe in dependency arrays. Pass a namespace to scope keys: `useT('settings')('title')`.
+ * locale, so it is safe in dependency arrays. Pass a namespace to scope keys: `useTranslator('settings')('title')`.
  *
  * @example
  * ```tsx
- * const t = useT()
- * t('greeting', { name: 'Ada' })
- * t.rich('terms', { link: <a href="/terms" /> })
+ * const translate = useTranslator()
+ * translate('greeting', { name: 'Ada' })
+ * translate.rich('terms', { link: <a href="/terms" /> })
  *
- * const ts = useT('settings')
- * ts('title') // same as t('settings.title')
+ * const translateSettings = useTranslator('settings')
+ * translateSettings('title') // same as translate('settings.title')
  * ```
  */
-export const useT = <N extends Namespace<RegisteredMessages> | undefined = undefined>(namespace?: N): Translator<Scoped<N>> => {
-	const instance = useInstance('useT')
+export const useTranslator = <N extends Namespace<RegisteredMessages> | undefined = undefined>(namespace?: N): Translator<Scoped<N>> => {
+	const instance = useInstance('useTranslator')
 	const { locale } = useSnapshot(instance)
 	return instance.translator(locale, namespace as never) as Translator<Scoped<N>>
 }
@@ -144,21 +144,21 @@ export const useFormat = (): Formatter => {
 }
 
 type Key = MessageKey<RegisteredMessages>
-type TransValues<K extends Key> = RichValuesOf<MessageAt<RegisteredMessages, K>>
+type TranslateValues<K extends Key> = RichValuesOf<MessageAt<RegisteredMessages, K>>
 
-export type TransProps<K extends Key> = { i18nKey: K } & ({} extends TransValues<K>
-	? { values?: TransValues<K> | undefined }
-	: { values: TransValues<K> })
+export type TranslateProps<K extends Key> = { i18nKey: K } & ({} extends TranslateValues<K>
+	? { values?: TranslateValues<K> | undefined }
+	: { values: TranslateValues<K> })
 
 /**
- * Renders a message with React elements in it. The component form of `t.rich`.
+ * Renders a message with React elements in it. The component form of `translate.rich`.
  *
  * @example
  * ```tsx
  * // "Read the <link>terms</link>, {name}."
- * <Trans i18nKey="terms" values={{ name: <b>Ada</b>, link: <a href="/terms" /> }} />
- * <Trans i18nKey="terms" values={{ name: 'Ada', link: chunks => <a href="/terms">{chunks}</a> }} />
+ * <Translate i18nKey="terms" values={{ name: <b>Ada</b>, link: <a href="/terms" /> }} />
+ * <Translate i18nKey="terms" values={{ name: 'Ada', link: chunks => <a href="/terms">{chunks}</a> }} />
  * ```
  */
-export const Trans = <K extends Key>({ i18nKey, values }: TransProps<K>): ReactNode =>
-	(useT() as unknown as Translator<Messages>).rich(i18nKey, values as never)
+export const Translate = <K extends Key>({ i18nKey, values }: TranslateProps<K>): ReactNode =>
+	(useTranslator() as unknown as Translator<Messages>).rich(i18nKey, values as never)

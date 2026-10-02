@@ -6,10 +6,10 @@ import type { ReactElement, ReactNode } from 'react'
  * @example
  * ```ts
  * const en = {
- *   greeting: 'Hello, {name}!', // t('greeting', { name: 'Ada' })
- *   inbox: { zero: 'No messages', one: '{count} message', other: '{count} messages' }, // t('inbox', { count: 3 })
- *   terms: 'Read the <link>terms</link>.', // t.rich('terms', { link: <a href="/terms" /> })
- *   settings: { title: 'Settings' } // t('settings.title'), or useT('settings')('title')
+ *   greeting: 'Hello, {name}!', // translate('greeting', { name: 'Ada' })
+ *   inbox: { zero: 'No messages', one: '{count} message', other: '{count} messages' }, // translate('inbox', { count: 3 })
+ *   terms: 'Read the <link>terms</link>.', // translate.rich('terms', { link: <a href="/terms" /> })
+ *   settings: { title: 'Settings' } // translate('settings.title'), or useTranslator('settings')('title')
  * } as const // keeps the literal strings, so keys and params are type-checked
  * ```
  */
@@ -54,7 +54,7 @@ export type MessageKey<T> = string extends keyof T
 			[K in keyof T & string]: Leaf<T[K]> extends true ? K : `${K}.${MessageKey<T[K]>}`
 		}[keyof T & string]
 
-/** Every dot-separated path that points at a group of messages; usable as a `useT()` namespace. */
+/** Every dot-separated path that points at a group of messages; usable as a `useTranslator()` namespace. */
 export type Namespace<T> = string extends keyof T
 	? string
 	: {
@@ -84,13 +84,15 @@ type ParamNames<S extends string> = S extends `${string}{${infer Name}}${infer R
 		: (Name extends '' | `${string}${Whitespace}${string}` ? never : Name) | ParamNames<Rest>
 	: never
 
-/** A tag name starts with a letter and has no whitespace or `/`, e.g. `link`, not `a href`. */
-type ValidTagName<Name extends string> = Name extends `${infer First}${string}`
-	? Lowercase<First> extends Uppercase<First>
-		? never
-		: Name extends `${string}${Whitespace | '/'}${string}`
-			? never
-			: Name
+type Letter = 'a' | 'b' | 'c' | 'd' | 'e' | 'f' | 'g' | 'h' | 'i' | 'j' | 'k' | 'l' | 'm' | 'n' | 'o' | 'p' | 'q' | 'r' | 's' | 't' | 'u' | 'v' | 'w' | 'x' | 'y' | 'z'
+type TagChar = Letter | Uppercase<Letter> | '0' | '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '_' | '-'
+type IsTagRest<S extends string> = S extends `${infer Char}${infer Rest}` ? (Char extends TagChar ? IsTagRest<Rest> : false) : true
+
+/** A tag name is an ASCII letter followed by letters, digits, `_` or `-`, e.g. `link`, not `a href` or `a.b`. */
+type ValidTagName<Name extends string> = Name extends `${infer First extends Letter | Uppercase<Letter>}${infer Rest}`
+	? IsTagRest<Rest> extends true
+		? Name
+		: never
 	: never
 
 /** Tag names of `<tag>` and `<tag/>` (whitespace before `>` or `/>` allowed, so `<br />` is `br`). */
@@ -125,13 +127,13 @@ type Args<P> = {} extends P ? [params?: P] : [params: P]
 
 export interface Translator<M = Messages> {
 	/**
-	 * Translate `key` to a plain string. Tags such as `<b>` are stripped; use `t.rich` to render them.
+	 * Translate `key` to a plain string. Tags such as `<b>` are stripped; use `translate.rich` to render them.
 	 *
 	 * @example
 	 * ```ts
-	 * t('greeting', { name: 'Ada' }) // 'Hello, {name}!' → 'Hello, Ada!'
-	 * t('inbox', { count: 3 }) // plural message → '3 messages'
-	 * t('settings.title') // nested key
+	 * translate('greeting', { name: 'Ada' }) // 'Hello, {name}!' → 'Hello, Ada!'
+	 * translate('inbox', { count: 3 }) // plural message → '3 messages'
+	 * translate('settings.title') // nested key
 	 * ```
 	 */
 	<K extends MessageKey<M>>(key: K, ...params: Args<ParamsOf<MessageAt<M, K>>>): string
@@ -141,8 +143,8 @@ export interface Translator<M = Messages> {
 	 * @example
 	 * ```tsx
 	 * // 'Read the <link>terms</link>.'
-	 * t.rich('terms', { link: <a href="/terms" /> })
-	 * t.rich('terms', { link: chunks => <a href="/terms">{chunks}</a> })
+	 * translate.rich('terms', { link: <a href="/terms" /> })
+	 * translate.rich('terms', { link: chunks => <a href="/terms">{chunks}</a> })
 	 * ```
 	 */
 	rich<K extends MessageKey<M>>(key: K, ...values: Args<RichValuesOf<MessageAt<M, K>>>): ReactNode
@@ -204,7 +206,7 @@ export interface I18n<L extends string = string, M = Messages> {
 	/** The active locale. */
 	readonly locale: L
 	/** A translator for the active locale. */
-	readonly t: Translator<M>
+	readonly translate: Translator<M>
 	/** A formatter for the active locale. */
 	readonly format: Formatter
 	/** True once the active locale and its fallbacks are loaded. */
@@ -212,9 +214,12 @@ export interface I18n<L extends string = string, M = Messages> {
 	/** Settles when the initial locale and its fallbacks are loaded. */
 	readonly ready: Promise<void>
 
-	/** Load `locale` (best match) and switch to it once loaded. Concurrent calls: the last one wins. */
+	/**
+	 * Load `locale` (best match) and switch to it once loaded. Concurrent calls: the last one wins.
+	 * Detectors with `persist` remember the choice.
+	 */
 	setLocale(locale: string | readonly string[]): Promise<void>
-	/** Pick a locale using the configured detectors and switch to it. */
+	/** Pick a locale using the configured detectors and switch to it. A detected locale is not persisted. */
 	detect(): Promise<void>
 	/** Best registered match for a requested locale or preference list. */
 	match(requested: string | readonly string[] | null | undefined): L | undefined
@@ -226,15 +231,16 @@ export interface I18n<L extends string = string, M = Messages> {
 	getMessages(locale: L): Messages | undefined
 	/**
 	 * Load `locale` and return a translator bound to it. Does not change the active locale. Ideal for Server Components.
+	 * Defaults to the active locale; an unregistered locale falls back to `defaultLocale` (unlike `load`, which rejects).
 	 *
 	 * @example
 	 * ```tsx
 	 * // app/[lang]/page.tsx
-	 * const t = await i18n.getT(lang, 'home')
-	 * return <h1>{t('title')}</h1>
+	 * const translate = await i18n.loadTranslator(lang, 'home')
+	 * return <h1>{translate('title')}</h1>
 	 * ```
 	 */
-	getT<N extends Namespace<M> | undefined = undefined>(
+	loadTranslator<N extends Namespace<M> | undefined = undefined>(
 		locale?: string,
 		namespace?: N
 	): Promise<Translator<N extends string ? MessageAt<M, N> : M>>
@@ -243,7 +249,7 @@ export interface I18n<L extends string = string, M = Messages> {
 		locale: L,
 		namespace?: N
 	): Translator<N extends string ? MessageAt<M, N> : M>
-	/** A formatter for any locale, e.g. `i18n.formatter(t.locale)` in a Server Component. */
+	/** A formatter for any locale, e.g. `i18n.formatter(translate.locale)` in a Server Component. */
 	formatter(locale: string): Formatter
 
 	/** A new instance with its own active locale that shares this one's config and loaded messages. */

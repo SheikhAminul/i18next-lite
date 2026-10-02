@@ -2,16 +2,16 @@
 import { Suspense } from 'react'
 import { prerender } from 'react-dom/static'
 import { describe, expect, it, vi } from 'vitest'
-import { I18nProvider, Trans, useT } from '../src/react.js'
+import { I18nProvider, Translate, useTranslator } from '../src/react.js'
 import { createTestI18n, type TestI18n } from './fixtures/i18n.js'
 
 const Page = () => {
-	const t = useT()
+	const translate = useTranslator()
 	return (
 		<main>
-			<h1>{t('home.title')}</h1>
+			<h1>{translate('home.title')}</h1>
 			<p>
-				<Trans i18nKey="terms" values={{ link: <a href="/terms" />, b: <b /> }} />
+				<Translate i18nKey="terms" values={{ link: <a href="/terms" />, b: <b /> }} />
 			</p>
 		</main>
 	)

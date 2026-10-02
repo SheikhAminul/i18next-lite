@@ -10,10 +10,10 @@ i18next-lite
 It is about 3 kB with zero dependencies and fully type-safe, it works in Server Components, and it translates 4–50× faster than those libraries in [reproducible benchmarks](#comparison).
 
 ```tsx
-const t = useT()
-t('inbox', { count: 3 })                     // "You have 3 messages"
-t('greeting', { nam: 'Ada' })                // ✗ TypeScript: did you mean `name`?
-<Trans i18nKey="terms" values={{ link: <a href="/terms" /> }} />
+const translate = useTranslator()
+translate('inbox', { count: 3 })                     // "You have 3 messages"
+translate('greeting', { nam: 'Ada' })                // ✗ TypeScript: did you mean `name`?
+<Translate i18nKey="terms" values={{ link: <a href="/terms" /> }} />
 ```
 
 > Despite the name, this is an independent project. It is not affiliated with or built on i18next.
@@ -30,7 +30,7 @@ Most React apps need the same things from i18n: typed keys, interpolation, plura
 ## Features
 
 - **Type-safe**: keys, params, plural `count` and rich-text tags are inferred from your default locale. Typos fail the build.
-- **Small**: about 2.9 kB for the core and 0.75 kB for the React bindings (minified and brotli-compressed). No dependencies.
+- **Small**: under 3 kB for the core and about 0.75 kB for the React bindings (minified and brotli-compressed). No dependencies.
 - **Fast**: each key resolves once per locale and is then served from a memo. Plain messages are never parsed, and React components re-render only when the locale changes.
 - **Plurals** use `Intl.PluralRules`, so `zero`/`one`/`two`/`few`/`many`/`other` work in every language.
 - **Formatting** of numbers, dates, relative times, lists and language names uses `Intl` for the active locale.
@@ -47,10 +47,10 @@ Each library was measured with the same tooling and the same messages, and each 
 
 | | i18next-lite 3 | react-i18next 17 + i18next 26 | react-intl 12 | next-intl 4 | Lingui 6 |
 |---|---|---|---|---|---|
-| **Bundle**: provider, hook, `<Trans>` (min + brotli) | **3.2 kB** | 18.2 kB | 12.5 kB | 10.1 kB | 3.4 kB¹ |
+| **Bundle**: provider, hook, rich-text component (min + brotli) | **3.2 kB** | 18.2 kB | 12.5 kB | 10.1 kB | 3.4 kB¹ |
 | **Direct dependencies** | **0** | 3 | 3 | 10 | 3 |
-| **`t('key')`** (ops/sec) | **20 M** | 0.4 M | 1.3 M | 4.5 M | – |
-| **`t('key', { name })`** | **13 M** | 0.3 M | 0.9 M | 0.3 M | – |
+| **`translate('key')`** (ops/sec) | **20 M** | 0.4 M | 1.3 M | 4.5 M | – |
+| **`translate('key', { name })`** | **13 M** | 0.3 M | 0.9 M | 0.3 M | – |
 | **plural** | **1.5 M** | 0.16 M | 0.27 M | 0.16 M | – |
 | Server Components | ✓ | ✓ | ✓ | ✓ | ✓ |
 | Works without a build step | ✓ | ✓ | ✓ | ✓ | –¹ |
@@ -127,15 +127,15 @@ createRoot(root).render(
 **3. Translate.**
 
 ```tsx
-import { Trans, useI18n, useT } from 'i18next-lite/react'
+import { Translate, useI18n, useTranslator } from 'i18next-lite/react'
 
 const Inbox = ({ count }: { count: number }) => {
-	const t = useT()
+	const translate = useTranslator()
 	return (
 		<>
-			<h1>{t('greeting', { name: 'Ada' })}</h1>
-			<p>{t('inbox', { count })}</p>
-			<Trans i18nKey="terms" values={{ link: <a href="/terms" />, b: chunks => <strong>{chunks}</strong> }} />
+			<h1>{translate('greeting', { name: 'Ada' })}</h1>
+			<p>{translate('inbox', { count })}</p>
+			<Translate i18nKey="terms" values={{ link: <a href="/terms" />, b: chunks => <strong>{chunks}</strong> }} />
 		</>
 	)
 }
@@ -154,18 +154,18 @@ const LanguagePicker = () => {
 
 | Feature | Message | Call | Result |
 |---|---|---|---|
-| Text | `'Welcome'` | `t('welcome')` | `Welcome` |
-| Nested keys | `{ settings: { title: 'Settings' } }` | `t('settings.title')` | `Settings` |
-| Params | `'Hello, {name}!'` | `t('greeting', { name: 'Ada' })` | `Hello, Ada!` |
-| Numbers, dates | `'Total: {amount}'` | `t('total', { amount: 1234.5 })` | `Total: 1,234.5` (`১,২৩৪.৫` in `bn`) |
-| Plurals | `{ one: '{count} file', other: '{count} files' }` | `t('files', { count: 2 })` | `2 files` |
-| Rich text | `'Read the <link>terms</link>'` | `t.rich('terms', { link: <a href="/terms" /> })` | `Read the <a href="/terms">terms</a>` |
-| Self-closing tags | `'One<br/>Two'` | `t.rich('lines', { br: <br /> })` | `One<br/>Two` |
+| Text | `'Welcome'` | `translate('welcome')` | `Welcome` |
+| Nested keys | `{ settings: { title: 'Settings' } }` | `translate('settings.title')` | `Settings` |
+| Params | `'Hello, {name}!'` | `translate('greeting', { name: 'Ada' })` | `Hello, Ada!` |
+| Numbers, dates | `'Total: {amount}'` | `translate('total', { amount: 1234.5 })` | `Total: 1,234.5` (`১,২৩৪.৫` in `bn`) |
+| Plurals | `{ one: '{count} file', other: '{count} files' }` | `translate('files', { count: 2 })` | `2 files` |
+| Rich text | `'Read the <link>terms</link>'` | `translate.rich('terms', { link: <a href="/terms" /> })` | `Read the <a href="/terms">terms</a>` |
+| Self-closing tags | `'One<br/>Two'` | `translate.rich('lines', { br: <br /> })` | `One<br/>Two` |
 
 - **Plural objects** take the categories `zero`, `one`, `two`, `few`, `many` and `other`, with `other` required. `zero` is used for `0` even in languages whose plural rules never select it, such as English.
-- **Tags** render with an element, which is cloned with the chunks as its children, or with a function `chunks => ReactNode`. `t()` strips tags and keeps their text, which is handy for `aria-label` and `title`.
-- **Params** in `t.rich` can also be React nodes: `t.rich('greeting', { name: <b>Ada</b> })`.
-- **Namespaces** scope keys: `useT('settings')('title')`.
+- **Tags** render with an element, which is cloned with the chunks as its children, or with a function `chunks => ReactNode`. `translate()` strips tags and keeps their text, which is handy for `aria-label` and `title`.
+- **Params** in `translate.rich` can also be React nodes: `translate.rich('greeting', { name: <b>Ada</b> })`.
+- **Namespaces** scope keys: `useTranslator('settings')('title')`.
 - **Missing keys** fall back through the locale chain. If a key is found nowhere, the key itself is rendered and a warning is logged once in development. Customize this with `onMissingKey`.
 
 ## Switching and loading locales
@@ -196,7 +196,7 @@ format.displayName('bn', { type: 'language' })         // Bangla
 
 ## Detection
 
-`detectors` are tried in order, and the first registered match wins. They run **after hydration**, so server and client markup always agree. Detectors with storage (`storageDetector`, `cookieDetector`) also remember every `setLocale` call.
+`detectors` are tried in order, and the first registered match wins. They run **after hydration**, so server and client markup always agree. Detectors with storage (`storageDetector`, `cookieDetector`) also remember every `setLocale` call. A detected locale isn't saved, so a later change of browser language still takes effect.
 
 | Detector | Reads |
 |---|---|
@@ -219,6 +219,8 @@ export const i18n = createI18n({
 	defaultLocale: 'en',
 	locales: { en, bn: () => import('./messages/bn.json') }
 })
+// Your language switcher calls `localeCookie.persist?.(locale)`; the proxy reads it on the next visit to `/`.
+export const localeCookie = cookieDetector('NEXT_LOCALE')
 declare module 'i18next-lite' {
 	interface Register { i18n: typeof i18n }
 }
@@ -257,6 +259,8 @@ export const Providers = ({ locale, children }: { locale: string; children: Reac
 // src/app/[lang]/layout.tsx
 import { getDirection } from 'i18next-lite'
 import { notFound } from 'next/navigation'
+import { i18n } from '@/i18n'
+import { Providers } from './providers'
 
 export const generateStaticParams = () => i18n.locales.map(lang => ({ lang }))
 
@@ -275,8 +279,8 @@ export default RootLayout
 ```tsx
 // src/app/[lang]/page.tsx: Server Component
 const Page = async ({ params }: { params: Promise<{ lang: string }> }) => {
-	const t = await i18n.getT((await params).lang)
-	return <h1>{t.rich('title', { b: <strong /> })}</h1>
+	const translate = await i18n.loadTranslator((await params).lang)
+	return <h1>{translate.rich('title', { b: <strong /> })}</h1>
 }
 export default Page
 ```
@@ -284,7 +288,7 @@ export default Page
 How it fits together:
 - **`i18next-lite`** is server-safe and imports no client hooks, so you can use it in Server Components, `generateMetadata`, route handlers and the proxy.
 - **`i18next-lite/react`** is marked `'use client'`.
-- **`getT(locale, namespace?)`** loads a locale and returns a translator without touching any shared state. Concurrent requests can't leak into each other.
+- **`loadTranslator(locale, namespace?)`** loads a locale and returns a translator without touching any shared state. Concurrent requests can't leak into each other.
 - **`<I18nProvider locale>`** gives its subtree a private copy of the instance pinned to that locale, while loaded messages stay shared. To change the language in Client Components, navigate to the other locale's URL.
 - **To avoid a client fetch for messages**, pass them from the server: `<I18nProvider locale={lang} messages={{ [lang]: messages }}>`.
 
@@ -301,19 +305,19 @@ How it fits together:
 | `getDirection(locale)` | `'ltr'` or `'rtl'` |
 | detectors | `navigatorDetector`, `storageDetector`, `cookieDetector`, `queryDetector`, `htmlLangDetector` |
 
-**Instance:** `locale`, `locales`, `defaultLocale`, `t`, `format`, `isReady`, `ready`, `setLocale()`, `detect()`, `match()`, `load()`, `getT()`, `translator()`, `formatter()`, `addMessages()`, `getMessages()`, `clone()`, `subscribe()`, `getSnapshot()`.
+**Instance:** `locale`, `locales`, `defaultLocale`, `translate`, `format`, `isReady`, `ready`, `setLocale()`, `detect()`, `match()`, `load()`, `loadTranslator()`, `translator()`, `formatter()`, `addMessages()`, `getMessages()`, `clone()`, `subscribe()`, `getSnapshot()`.
 
-**Translator:** `t(key, params?)` returns a string. `t.rich(key, values?)` returns a ReactNode. Also `t.has(key)`, `t.locale` and `t.namespace`. A translator's identity is stable per locale, so it's safe in dependency arrays.
+**Translator:** `translate(key, params?)` returns a string. `translate.rich(key, values?)` returns a ReactNode. Also `translate.has(key)`, `translate.locale` and `translate.namespace`. A translator's identity is stable per locale, so it's safe in dependency arrays.
 
 ### `i18next-lite/react`
 
 | Export | Description |
 |---|---|
 | `<I18nProvider i18n locale? messages? detect? syncDocument?>` | Provides an instance. With `locale`, the subtree is pinned to that locale. `detect` and `syncDocument` default to `true` |
-| `useT(namespace?)` | Translator for the active locale |
+| `useTranslator(namespace?)` | Translator for the active locale |
 | `useI18n()` | `{ locale, locales, defaultLocale, dir, setLocale, isPending, pendingLocale, i18n }` |
 | `useFormat()` | `Intl` formatters for the active locale |
-| `<Trans i18nKey values?>` | Component form of `t.rich` |
+| `<Translate i18nKey values?>` | Component form of `translate.rich` |
 
 ## Performance
 
@@ -321,14 +325,14 @@ How it fits together:
 
 | Call | ops/sec |
 |---|---|
-| `t('plain')` | ~19 M |
-| `t('home.nested.deep', { value })` | ~15 M |
-| namespaced `t('title')` | ~23 M |
+| `translate('plain')` | ~19 M |
+| `translate('home.nested.deep', { value })` | ~15 M |
+| namespaced `translate('title')` | ~23 M |
 | fallback chain `bn-BD → bn → en` | ~22 M |
-| `t('greeting', { name })` | ~11 M |
-| `t('total', { amount: 1234.5 })` (number formatting) | ~2 M |
-| `t('inbox', { count })` (plural) | ~1.5 M |
-| `t.rich(...)` with two elements | ~330 k |
+| `translate('greeting', { name })` | ~11 M |
+| `translate('total', { amount: 1234.5 })` (number formatting) | ~2 M |
+| `translate('inbox', { count })` (plural) | ~1.5 M |
+| `translate.rich(...)` with two elements | ~330 k |
 
 Why it's fast:
 - Each key walks the fallback chain once per translator and is then a single `Map` lookup. The memo is cleared only when messages change.
@@ -347,9 +351,9 @@ The concepts map one to one. The main change in message files is how plurals are
 | `{ en: { translation: { … } } }` | `{ en: { … } }` |
 | `'Hello {{name}}'` | `'Hello {name}'` |
 | `key_one` / `key_other` | `key: { one: '…', other: '…' }` |
-| `const { t, i18n } = useTranslation('ns')` | `const t = useT('ns')`, `const { setLocale } = useI18n()` |
+| `const { t, i18n } = useTranslation('ns')` | `const translate = useTranslator('ns')`, `const { setLocale } = useI18n()` |
 | `i18n.changeLanguage('bn')` | `setLocale('bn')` |
-| `<Trans i18nKey="x" components={{ link: <a /> }} />` | `<Trans i18nKey="x" values={{ link: <a /> }} />` |
+| `<Trans i18nKey="x" components={{ link: <a /> }} />` | `<Translate i18nKey="x" values={{ link: <a /> }} />` |
 | `i18next-browser-languagedetector` | `detectors: [storageDetector(), navigatorDetector()]` |
 | `i18next-http-backend` | `bn: () => import('./bn.json')` or `() => fetch(url).then(r => r.json())` |
 
@@ -358,9 +362,9 @@ The concepts map one to one. The main change in message files is how plurals are
 | next-intl | i18next-lite |
 |---|---|
 | `<NextIntlClientProvider locale messages>` | `<I18nProvider i18n={i18n} locale messages>` |
-| `useTranslations('ns')` | `useT('ns')` |
-| `await getTranslations({ locale, namespace })` | `await i18n.getT(locale, namespace)` |
-| `t.rich('x', { b: chunks => <b>{chunks}</b> })` | Same |
+| `useTranslations('ns')` | `useTranslator('ns')` |
+| `await getTranslations({ locale, namespace })` | `await i18n.loadTranslator(locale, namespace)` |
+| `t.rich('x', { b: chunks => <b>{chunks}</b> })` | `translate.rich('x', { b: chunks => <b>{chunks}</b> })` |
 | `'{count, plural, one {# item} other {# items}}'` | `{ one: '{count} item', other: '{count} items' }` |
 | `useFormatter()`, `useLocale()` | `useFormat()`, `useI18n().locale` |
 | `createMiddleware(routing)` | A short `proxy.ts` with `negotiateLocale()`; see [Next.js](#nextjs-app-router) |
@@ -370,8 +374,8 @@ The concepts map one to one. The main change in message files is how plurals are
 | react-intl | i18next-lite |
 |---|---|
 | `<IntlProvider locale messages>` | `<I18nProvider i18n={i18n}>` |
-| `useIntl().formatMessage({ id }, values)` | `useT()(id, values)` |
-| `<FormattedMessage id="x" values={…} />` | `<Trans i18nKey="x" values={…} />` |
+| `useIntl().formatMessage({ id }, values)` | `useTranslator()(id, values)` |
+| `<FormattedMessage id="x" values={…} />` | `<Translate i18nKey="x" values={…} />` |
 | `intl.formatNumber`, `formatDate`, `formatList` | `useFormat().number`, `.date`, `.list` |
 | `'{count, plural, one {# item} other {# items}}'` | `{ one: '{count} item', other: '{count} items' }` |
 
@@ -384,8 +388,8 @@ v3 is a rewrite.
 | `<TranslationProvider translations={…} defaultLanguage="en">` | `createI18n({ locales, defaultLocale })`, then `<I18nProvider i18n={i18n}>` |
 | `{ en: { translation: { … } } }` | `{ en: { … } }`: no `translation` wrapper, nesting allowed |
 | `'Hello {{name}}'` | `'Hello {name}'` |
-| `const translate = useTranslate()` | `const t = useT()` |
-| `translate('key', { name: <b>x</b> })` | `t.rich('key', { name: <b>x</b> })` or `<Trans>` |
+| `const translate = useTranslate()` | `const translate = useTranslator()` |
+| `translate('key', { name: <b>x</b> })` | `translate.rich('key', { name: <b>x</b> })` or `<Translate>` |
 | `translate({ en: '…', bn: '…' })` | Put the text in your messages |
 | `useTranslatorConfigurer()({ language: 'bn' })` | `useI18n().setLocale('bn')` |
 | `useTranslatorConfiguration().language` | `useI18n().locale` |

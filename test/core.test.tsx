@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createI18n, storageDetector, type Translator } from '../src/index.js'
 import { createTestI18n, deferred } from './fixtures/i18n.js'
 
-const loose = (t: unknown) => t as Translator
+const loose = (translate: unknown) => translate as Translator
 
 afterEach(() => {
 	vi.restoreAllMocks()
@@ -30,40 +30,40 @@ describe('createI18n', () => {
 })
 
 describe('translate', () => {
-	const { t } = createTestI18n()
+	const { translate } = createTestI18n()
 
 	it('looks up plain and nested keys', () => {
-		expect(t('plain')).toBe('Plain text')
-		expect(t('home.title')).toBe('Welcome')
-		expect(t('home.nested.deep', { value: 'x' })).toBe('Deep x')
+		expect(translate('plain')).toBe('Plain text')
+		expect(translate('home.title')).toBe('Welcome')
+		expect(translate('home.nested.deep', { value: 'x' })).toBe('Deep x')
 	})
 
 	it('interpolates params and leaves unknown ones visible', () => {
-		expect(t('greeting', { name: 'Ada' })).toBe('Hello, Ada!')
-		expect(loose(t)('greeting')).toBe('Hello, {name}!')
+		expect(translate('greeting', { name: 'Ada' })).toBe('Hello, Ada!')
+		expect(loose(translate)('greeting')).toBe('Hello, {name}!')
 	})
 
 	it('formats number, bigint and date params for the locale', async () => {
-		expect(t('total', { amount: 1234567.5 })).toBe('Total: 1,234,567.5')
-		expect(t('total', { amount: 10n ** 12n })).toBe('Total: 1,000,000,000,000')
-		expect(t('total', { amount: new Date(Date.UTC(2026, 0, 15, 12)) })).toMatch(/^Total: 1\/15\/2026$/)
+		expect(translate('total', { amount: 1234567.5 })).toBe('Total: 1,234,567.5')
+		expect(translate('total', { amount: 10n ** 12n })).toBe('Total: 1,000,000,000,000')
+		expect(translate('total', { amount: new Date(Date.UTC(2026, 0, 15, 12)) })).toMatch(/^Total: 1\/15\/2026$/)
 
-		const bn = await createTestI18n().getT('bn')
+		const bn = await createTestI18n().loadTranslator('bn')
 		expect(bn('total', { amount: 1234 })).toBe('মোট: ১,২৩৪')
 	})
 
 	it('strips rich-text tags in plain strings', () => {
-		expect(t('terms')).toBe('Read the terms and agree.')
-		expect(t('lines')).toBe('OneTwo')
+		expect(translate('terms')).toBe('Read the terms and agree.')
+		expect(translate('lines')).toBe('OneTwo')
 	})
 
 	it('picks plural forms with Intl.PluralRules, honouring `zero`', async () => {
-		expect(t('inbox', { count: 0 })).toBe('No messages')
-		expect(t('inbox', { count: 1 })).toBe('You have 1 message')
-		expect(t('inbox', { count: 1000 })).toBe('You have 1,000 messages')
-		expect(loose(t)('inbox')).toBe('You have {count} messages')
+		expect(translate('inbox', { count: 0 })).toBe('No messages')
+		expect(translate('inbox', { count: 1 })).toBe('You have 1 message')
+		expect(translate('inbox', { count: 1000 })).toBe('You have 1,000 messages')
+		expect(loose(translate)('inbox')).toBe('You have {count} messages')
 
-		const ar = await createTestI18n().getT('ar')
+		const ar = await createTestI18n().loadTranslator('ar')
 		expect([0, 1, 2, 3, 11, 100].map(count => ar('inbox', { count }))).toEqual([
 			'لا رسائل',
 			'رسالة واحدة',
@@ -76,28 +76,28 @@ describe('translate', () => {
 
 	it('accepts a bigint count', async () => {
 		const i18n = createTestI18n()
-		expect(i18n.t('inbox', { count: 1n })).toBe('You have 1 message')
-		expect(i18n.t('inbox', { count: 0n })).toBe('No messages')
+		expect(i18n.translate('inbox', { count: 1n })).toBe('You have 1 message')
+		expect(i18n.translate('inbox', { count: 0n })).toBe('No messages')
 	})
 
 	it('supports flat keys that contain dots', () => {
 		const i18n = createI18n({ defaultLocale: 'en', locales: { en: { 'flat.key': 'Flat' } } })
-		expect(i18n.t('flat.key')).toBe('Flat')
+		expect(i18n.translate('flat.key')).toBe('Flat')
 	})
 
 	it('does not resolve keys from the object prototype', () => {
-		expect(loose(t)('constructor')).toBe('constructor')
-		expect(loose(t)('home.toString')).toBe('home.toString')
+		expect(loose(translate)('constructor')).toBe('constructor')
+		expect(loose(translate)('home.toString')).toBe('home.toString')
 	})
 
 	it('reports whether a key exists', () => {
-		expect(t.has('home.title')).toBe(true)
-		expect(t.has('home')).toBe(false)
-		expect(t.has('missing')).toBe(false)
+		expect(translate.has('home.title')).toBe(true)
+		expect(translate.has('home')).toBe(false)
+		expect(translate.has('missing')).toBe(false)
 	})
 
 	it('scopes keys to a namespace', async () => {
-		const home = await createTestI18n().getT('en', 'home')
+		const home = await createTestI18n().loadTranslator('en', 'home')
 		expect(home('title')).toBe('Welcome')
 		expect(home('nested.deep', { value: 1 })).toBe('Deep 1')
 		expect(home.namespace).toBe('home')
@@ -116,13 +116,13 @@ describe('missing keys and fallbacks', () => {
 	it('falls back through region, base language and default locale', async () => {
 		const i18n = createTestI18n()
 		await i18n.setLocale('bn-BD')
-		expect(i18n.t('greeting', { name: 'A' })).toBe('হ্যালো (BD), A!')
-		expect(i18n.t('home.title')).toBe('স্বাগতম')
-		expect(i18n.t('onlyEnglish')).toBe('Only in English')
+		expect(i18n.translate('greeting', { name: 'A' })).toBe('হ্যালো (BD), A!')
+		expect(i18n.translate('home.title')).toBe('স্বাগতম')
+		expect(i18n.translate('onlyEnglish')).toBe('Only in English')
 	})
 
 	it('formats fallback messages with the locale they came from', async () => {
-		const ar = await createTestI18n().getT('ar')
+		const ar = await createTestI18n().loadTranslator('ar')
 		expect(loose(ar)('total', { amount: 5 })).toBe('Total: 5')
 	})
 
@@ -132,44 +132,44 @@ describe('missing keys and fallbacks', () => {
 			fallbacks: { 'pt-BR': ['pt-PT'] },
 			locales: { en: { a: 'en', b: 'en' }, pt: { a: 'pt', b: 'pt' }, 'pt-PT': { a: 'pt-PT' }, 'pt-BR': {} }
 		})
-		const t = await i18n.getT('pt-BR')
-		expect(t('a')).toBe('pt-PT')
-		expect(t('b')).toBe('pt')
+		const translate = await i18n.loadTranslator('pt-BR')
+		expect(translate('a')).toBe('pt-PT')
+		expect(translate('b')).toBe('pt')
 	})
 
 	it('returns the key and warns once per key in development', () => {
 		const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
-		const t = loose(createTestI18n().t)
-		expect(t('nope')).toBe('nope')
-		expect(t('nope')).toBe('nope')
+		const translate = loose(createTestI18n().translate)
+		expect(translate('nope')).toBe('nope')
+		expect(translate('nope')).toBe('nope')
 		expect(warn).toHaveBeenCalledTimes(1)
 		expect(warn.mock.calls[0]?.[0]).toContain('Missing message "nope" for locale "en"')
 	})
 
 	it('lets onMissingKey supply a replacement', async () => {
 		const onMissingKey = vi.fn(({ key }: { key: string }) => `⚠ ${key}`)
-		const home = loose(await createTestI18n({ onMissingKey }).getT('ar', 'home'))
+		const home = loose(await createTestI18n({ onMissingKey }).loadTranslator('ar', 'home'))
 		expect(home('nothing')).toBe('⚠ home.nothing')
 		expect(onMissingKey).toHaveBeenCalledWith({ key: 'home.nothing', locale: 'ar' })
 	})
 })
 
 describe('rich text', () => {
-	const { t } = createTestI18n()
+	const { translate } = createTestI18n()
 	const html = (node: React.ReactNode) => renderToStaticMarkup(<>{node}</>)
 
 	it('renders tags with elements or functions', () => {
-		const node = t.rich('terms', { link: <a href="/terms" />, b: chunks => <strong>{chunks}</strong> })
+		const node = translate.rich('terms', { link: <a href="/terms" />, b: chunks => <strong>{chunks}</strong> })
 		expect(html(node)).toBe('Read the <a href="/terms">terms</a> and <strong>agree</strong>.')
 	})
 
 	it('renders self-closing tags', () => {
-		expect(html(t.rich('lines', { br: <br /> }))).toBe('One<br/>Two')
+		expect(html(translate.rich('lines', { br: <br /> }))).toBe('One<br/>Two')
 	})
 
 	it('inserts React nodes and formatted values as params', () => {
-		expect(html(t.rich('greeting', { name: <em>Ada</em> }))).toBe('Hello, <em>Ada</em>!')
-		expect(t.rich('total', { amount: 1500 })).toBe('Total: 1,500')
+		expect(html(translate.rich('greeting', { name: <em>Ada</em> }))).toBe('Hello, <em>Ada</em>!')
+		expect(translate.rich('total', { amount: 1500 })).toBe('Total: 1,500')
 	})
 
 	it('supports nested tags and leaves malformed ones as text', () => {
@@ -179,32 +179,41 @@ describe('rich text', () => {
 		})
 		const b = <b />
 		const i = <i />
-		expect(html(i18n.t.rich('nested', { b, i }))).toBe('<b>bold <i>both</i></b>')
-		expect(loose(i18n.t).rich('broken', { b, i })).toBe('a <b>b </i> c')
-		expect(i18n.t.rich('stray')).toBe('x </b> 1 < 2')
+		expect(html(i18n.translate.rich('nested', { b, i }))).toBe('<b>bold <i>both</i></b>')
+		expect(loose(i18n.translate).rich('broken', { b, i })).toBe('a <b>b </i> c')
+		expect(i18n.translate.rich('stray')).toBe('x </b> 1 < 2')
 	})
 
 	it('parses whitespace and braces the way the types expect', () => {
 		const i18n = createI18n({
 			defaultLocale: 'en',
-			locales: { en: { spaced: 'One<br />Two <b >bold</b >', text: 'Use {curly braces}, {} and a < b > c', doubled: '{{name}}', attr: '<a href>x</a>' } }
+			locales: {
+				en: {
+					spaced: 'One<br />Two <b >bold</b >',
+					text: 'Use {curly braces}, {} and a < b > c',
+					doubled: '{{name}}',
+					attr: '<a href>x</a>',
+					names: '<a.b>x</a.b> <é>y</é> <h1>z</h1> <my-tag_2>w</my-tag_2>'
+				}
+			}
 		})
-		expect(html(i18n.t.rich('spaced', { br: <br />, b: <b /> }))).toBe('One<br/>Two <b>bold</b>')
-		expect(i18n.t('text')).toBe('Use {curly braces}, {} and a < b > c')
-		expect(i18n.t('doubled', { name: 'x' })).toBe('{x}')
-		expect(i18n.t.rich('attr')).toBe('<a href>x</a>')
+		expect(html(i18n.translate.rich('spaced', { br: <br />, b: <b /> }))).toBe('One<br/>Two <b>bold</b>')
+		expect(i18n.translate('text')).toBe('Use {curly braces}, {} and a < b > c')
+		expect(i18n.translate('doubled', { name: 'x' })).toBe('{x}')
+		expect(i18n.translate.rich('attr')).toBe('<a href>x</a>')
+		expect(html(i18n.translate.rich('names', { h1: <h1 />, 'my-tag_2': <i /> }))).toBe('&lt;a.b&gt;x&lt;/a.b&gt; &lt;é&gt;y&lt;/é&gt; <h1>z</h1> <i>w</i>')
 	})
 
 	it('renders the content of tags without a renderer, warning once', () => {
 		const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
-		const t = loose(createTestI18n().t)
-		expect(t.rich('terms')).toBe('Read the terms and agree.')
+		const translate = loose(createTestI18n().translate)
+		expect(translate.rich('terms')).toBe('Read the terms and agree.')
 		expect(warn).toHaveBeenCalledWith(expect.stringContaining('No renderer for <link>'))
 	})
 
 	it('has no key warnings with multiple element children', () => {
 		const error = vi.spyOn(console, 'error').mockImplementation(() => {})
-		html(t.rich('terms', { link: <a />, b: <b /> }))
+		html(translate.rich('terms', { link: <a />, b: <b /> }))
 		expect(error).not.toHaveBeenCalled()
 	})
 })
@@ -216,7 +225,7 @@ describe('locale switching', () => {
 		const unsubscribe = i18n.subscribe(listener)
 		await i18n.setLocale('ar-SA')
 		expect(i18n.locale).toBe('ar')
-		expect(i18n.t('plain')).toBe('نص عادي')
+		expect(i18n.translate('plain')).toBe('نص عادي')
 		expect(listener).toHaveBeenCalledTimes(1)
 
 		await i18n.setLocale('ar')
@@ -231,12 +240,12 @@ describe('locale switching', () => {
 		const i18n = createTestI18n({ bn: () => bn.promise })
 		const switching = i18n.setLocale('bn')
 		expect(i18n.getSnapshot()).toEqual({ locale: 'en', pendingLocale: 'bn' })
-		expect(i18n.t('plain')).toBe('Plain text')
+		expect(i18n.translate('plain')).toBe('Plain text')
 
 		bn.resolve({ default: { plain: 'সাধারণ লেখা' } })
 		await switching
 		expect(i18n.getSnapshot()).toEqual({ locale: 'bn', pendingLocale: undefined })
-		expect(i18n.t('plain')).toBe('সাধারণ লেখা')
+		expect(i18n.translate('plain')).toBe('সাধারণ লেখা')
 	})
 
 	it('lets the latest setLocale call win', async () => {
@@ -252,7 +261,7 @@ describe('locale switching', () => {
 	it('loads each locale once, even when requested concurrently', async () => {
 		const loader = vi.fn(() => Promise.resolve({ plain: 'x' }))
 		const i18n = createTestI18n({ bn: loader })
-		await Promise.all([i18n.setLocale('bn'), i18n.load('bn-BD'), i18n.clone().getT('bn')])
+		await Promise.all([i18n.setLocale('bn'), i18n.load('bn-BD'), i18n.clone().loadTranslator('bn')])
 		expect(loader).toHaveBeenCalledTimes(1)
 	})
 
@@ -265,7 +274,7 @@ describe('locale switching', () => {
 		expect(i18n.getSnapshot()).toEqual({ locale: 'en', pendingLocale: undefined })
 
 		await i18n.setLocale('bn')
-		expect(i18n.t('plain')).toBe('ok')
+		expect(i18n.translate('plain')).toBe('ok')
 	})
 
 	it('ignores unknown locales with a warning', async () => {
@@ -282,7 +291,7 @@ describe('locale switching', () => {
 		expect(i18n.isReady).toBe(false)
 		await i18n.ready
 		expect(i18n.isReady).toBe(true)
-		expect(i18n.t('home.title')).toBe('স্বাগতম')
+		expect(i18n.translate('home.title')).toBe('স্বাগতম')
 	})
 
 	it('rejects load() for unknown locales', async () => {
@@ -303,6 +312,13 @@ describe('detection', () => {
 		expect(localStorage.getItem('locale')).toBe('en')
 	})
 
+	it('does not persist a detected locale', async () => {
+		const i18n = createTestI18n({ detectors: [storageDetector(), { detect: () => 'ar' }] })
+		await i18n.detect()
+		expect(i18n.locale).toBe('ar')
+		expect(localStorage.getItem('locale')).toBeNull()
+	})
+
 	it('does nothing without a match', async () => {
 		const i18n = createTestI18n({ detectors: [{ detect: () => null }] })
 		await i18n.detect()
@@ -320,26 +336,26 @@ describe('instances', () => {
 		expect([i18n.locale, a.locale, b.locale]).toEqual(['en', 'ar', 'bn'])
 
 		await a.setLocale('bn')
-		expect(a.t('plain')).toBe('সাধারণ লেখা')
+		expect(a.translate('plain')).toBe('সাধারণ লেখা')
 		expect(i18n.locale).toBe('en')
 		expect(loader).toHaveBeenCalledTimes(1)
 	})
 
-	it('getT loads a locale without changing the active one', async () => {
+	it('loadTranslator loads a locale without changing the active one', async () => {
 		const i18n = createTestI18n()
-		const t = await i18n.getT('bn')
-		expect(t('plain')).toBe('সাধারণ লেখা')
-		expect(t.locale).toBe('bn')
+		const translate = await i18n.loadTranslator('bn')
+		expect(translate('plain')).toBe('সাধারণ লেখা')
+		expect(translate.locale).toBe('bn')
 		expect(i18n.locale).toBe('en')
-		expect((await i18n.getT('fr')).locale).toBe('en')
-		expect((await i18n.getT()).locale).toBe('en')
+		expect((await i18n.loadTranslator('fr')).locale).toBe('en')
+		expect((await i18n.loadTranslator()).locale).toBe('en')
 	})
 
 	it('accepts messages added at runtime and unwraps module namespaces', async () => {
 		const i18n = createTestI18n({ bn: () => Promise.reject(new Error('should not load')) })
 		i18n.addMessages('bn', { plain: 'added' })
 		expect(i18n.getMessages('bn')).toEqual({ plain: 'added' })
-		expect((await i18n.getT('bn'))('plain')).toBe('added')
+		expect((await i18n.loadTranslator('bn'))('plain')).toBe('added')
 
 		const json = createTestI18n({ bn: () => import('./fixtures/bn.json') })
 		await json.load('bn')
@@ -373,7 +389,7 @@ describe('instances', () => {
 		expect(cloneListener).toHaveBeenCalledOnce()
 		expect(i18n.getSnapshot()).not.toBe(before)
 		expect(i18n.getSnapshot()).toEqual(before)
-		expect(loose(i18n.t)('plain')).toBe('Replaced')
+		expect(loose(i18n.translate)('plain')).toBe('Replaced')
 
 		unsubscribe()
 		unsubscribeClone()

@@ -11,8 +11,8 @@ export const generateStaticParams = () => i18n.locales.map(lang => ({ lang }))
 export const dynamicParams = false
 
 export const generateMetadata = async ({ params }: Omit<Props, 'children'>): Promise<Metadata> => {
-	const t = await i18n.getT((await params).lang)
-	return { title: t('meta.title') }
+	const translate = await i18n.loadTranslator((await params).lang)
+	return { title: translate('meta.title') }
 }
 
 const RootLayout = async ({ children, params }: Props) => {

@@ -1,13 +1,13 @@
 'use client'
 
-import { useFormat, useI18n, useT } from 'i18next-lite/react'
+import { useFormat, useI18n, useTranslator } from 'i18next-lite/react'
 import { usePathname, useRouter } from 'next/navigation'
 import { useTransition } from 'react'
 import { localeCookie } from '@/i18n'
 
 // With a URL-based locale, switching language means navigating; the new route's layout passes the new locale down.
 export const LanguageSwitcher = () => {
-	const t = useT()
+	const translate = useTranslator()
 	const { locale, locales } = useI18n()
 	const format = useFormat()
 	const router = useRouter()
@@ -16,7 +16,7 @@ export const LanguageSwitcher = () => {
 
 	return (
 		<label>
-			{t('switcher.label')}{' '}
+			{translate('switcher.label')}{' '}
 			<select
 				value={locale}
 				disabled={isPending}

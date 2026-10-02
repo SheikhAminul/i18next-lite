@@ -8,7 +8,7 @@ import { Bench } from 'tinybench'
 const lite = createI18n({
 	defaultLocale: 'en',
 	locales: { en: { plain: 'Plain text', greeting: 'Hello, {name}!', home: { title: 'Welcome' }, inbox: { one: 'You have {count} message', other: 'You have {count} messages' } } }
-}).t
+}).translate
 
 await i18next.init({
 	lng: 'en',

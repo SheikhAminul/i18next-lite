@@ -172,13 +172,13 @@ const createTranslator = (shared: Shared, locale: string, namespace: string | un
 		return info.key
 	}
 
-	const t = (key: string, params?: Values) => {
+	const translate = (key: string, params?: Values) => {
 		const entry = resolve(key)
 		if (!entry) return missing(key)
 		const message = select(entry, params?.count)
 		return typeof message === 'string' ? message : renderString(message, entry.locale, params)
 	}
-	t.rich = (key: string, values?: Values) => {
+	translate.rich = (key: string, values?: Values) => {
 		const entry = resolve(key)
 		if (!entry) return missing(key)
 		const message = select(entry, values?.count)
@@ -187,10 +187,10 @@ const createTranslator = (shared: Shared, locale: string, namespace: string | un
 			warnOnce(shared, `tag\0${fullKey(key)}\0${tag}`, `No renderer for <${tag}> in message "${fullKey(key)}".`)
 		return toNode(renderRich(message, entry.locale, values, onMissingTag))
 	}
-	t.has = (key: string) => resolve(key) !== null
-	t.locale = locale
-	t.namespace = namespace
-	return t as unknown as Translator
+	translate.has = (key: string) => resolve(key) !== null
+	translate.locale = locale
+	translate.namespace = namespace
+	return translate as unknown as Translator
 }
 
 const getTranslator = (shared: Shared, locale: string, namespace?: string): Translator => {
@@ -224,16 +224,17 @@ const createInstance = (shared: Shared, requested: string | undefined): I18n => 
 	}
 	// Same state, new snapshot: subscribers re-render with the replaced messages.
 	const refresh = () => notify({ ...snapshot })
-	const commit = (locale: string) => {
+	// Only explicit choices are persisted. Saving a detected locale would pin it, e.g. ignore a later browser language change.
+	const commit = (locale: string, persist?: boolean) => {
 		update({ locale, pendingLocale: undefined })
-		for (const detector of config.detectors ?? []) detector.persist?.(locale)
+		if (persist) for (const detector of config.detectors ?? []) detector.persist?.(locale)
 	}
 
 	const ready = load(shared, snapshot.locale)
 	// Rejections surface through `ready` and the React provider; don't also report them as unhandled.
 	ready.catch(() => {})
 
-	const setLocale = (preference: string | readonly string[]): Promise<void> => {
+	const switchTo = (preference: string | readonly string[], persist?: boolean): Promise<void> => {
 		const next = match(preference)
 		if (!next) {
 			warnOnce(shared, `locale\0${String(preference)}`, `No registered locale matches "${String(preference)}".`)
@@ -241,13 +242,13 @@ const createInstance = (shared: Shared, requested: string | undefined): I18n => 
 		}
 		const request = ++latestRequest
 		if (isLoaded(shared, next)) {
-			commit(next)
+			commit(next, persist)
 			return RESOLVED
 		}
 		update({ locale: snapshot.locale, pendingLocale: next })
 		return load(shared, next).then(
 			() => {
-				if (request === latestRequest) commit(next)
+				if (request === latestRequest) commit(next, persist)
 			},
 			error => {
 				if (request === latestRequest) update({ locale: snapshot.locale, pendingLocale: undefined })
@@ -263,7 +264,7 @@ const createInstance = (shared: Shared, requested: string | undefined): I18n => 
 		get locale() {
 			return snapshot.locale
 		},
-		get t() {
+		get translate() {
 			return getTranslator(shared, snapshot.locale)
 		},
 		get format() {
@@ -272,14 +273,14 @@ const createInstance = (shared: Shared, requested: string | undefined): I18n => 
 		get isReady() {
 			return isLoaded(shared, snapshot.locale)
 		},
-		setLocale,
+		setLocale: preference => switchTo(preference, true),
 		detect: () => {
 			for (const detector of config.detectors ?? []) {
 				let detected
 				try {
 					detected = match(detector.detect())
 				} catch {}
-				if (detected) return setLocale(detected)
+				if (detected) return switchTo(detected)
 			}
 			return RESOLVED
 		},
@@ -290,7 +291,7 @@ const createInstance = (shared: Shared, requested: string | undefined): I18n => 
 		},
 		addMessages: (locale, messages) => setMessages(shared, locale, messages),
 		getMessages: locale => shared.loaded.get(locale),
-		getT: (locale, namespace) => {
+		loadTranslator: (locale, namespace) => {
 			const resolved = locale === undefined ? snapshot.locale : (match(locale) ?? config.defaultLocale)
 			return load(shared, resolved).then(() => getTranslator(shared, resolved, namespace) as never)
 		},
