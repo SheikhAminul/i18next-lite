@@ -1,0 +1,8 @@
+{
+	"plain": "সাধারণ লেখা",
+	"greeting": "হ্যালো, {name}!",
+	"inbox": { "one": "আপনার {count}টি বার্তা আছে", "other": "আপনার {count}টি বার্তা আছে" },
+	"home": { "title": "স্বাগতম", "subtitle": "{user} হিসেবে সাইন ইন", "nested": { "deep": "গভীর {value}" } },
+	"terms": "<link>শর্তাবলী</link> পড়ুন এবং <b>সম্মত হন</b>।",
+	"total": "মোট: {amount}"
+}

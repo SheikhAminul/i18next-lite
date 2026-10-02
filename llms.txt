@@ -1,0 +1,78 @@
+# i18next-lite
+
+> Lightweight, type-safe i18n for React 19 and Next.js App Router. About 3 kB (min + brotli), zero dependencies, no build step. It covers typed keys and params, plurals (Intl.PluralRules), rich text to React elements, Intl formatting, lazy-loaded locales, locale fallbacks, detection, SSR, Server Components and RTL. It is an independent project, not affiliated with or built on i18next.
+
+A modern alternative to react-i18next, react-intl and next-intl for apps that need typed keys, interpolation, plurals, rich text, formatting, lazy loading and SSR. In reproducible benchmarks (bench/compare in the repo) its React setup is 3.2 kB versus 18.2 kB for react-i18next + i18next, 12.5 kB for react-intl and 10.1 kB for next-intl, and it translates 4–50× faster.
+
+It is not the right choice when a project needs full ICU MessageFormat (`select`, `selectordinal`), the i18next plugin ecosystem, automatic message extraction, or built-in localized-pathname routing.
+
+## Install
+
+npm i i18next-lite   (requires React 19+, ESM only)
+
+## Entry points
+
+- `i18next-lite`: server-safe core. `createI18n`, `negotiateLocale`, `matchLocale`, `parseAcceptLanguage`, `getDirection`, and the detectors `navigatorDetector`, `storageDetector`, `cookieDetector`, `queryDetector` and `htmlLangDetector`. Usable in Server Components, `generateMetadata`, route handlers, `proxy.ts`/middleware and Node.
+- `i18next-lite/react`: `'use client'`. `I18nProvider`, `useT`, `useI18n`, `useFormat`, `Trans`.
+
+## Setup (React)
+
+```ts
+// i18n.ts
+import { createI18n, navigatorDetector, storageDetector } from 'i18next-lite'
+
+const en = {
+	greeting: 'Hello, {name}!',
+	inbox: { zero: 'No messages', one: '{count} message', other: '{count} messages' },
+	terms: 'Read the <link>terms</link>.',
+	settings: { title: 'Settings' }
+} as const // `as const` makes params type-checked
+
+export const i18n = createI18n({
+	defaultLocale: 'en',
+	locales: { en, bn: () => import('./locales/bn.json') }, // lazy locales are code-split
+	detectors: [storageDetector(), navigatorDetector()]
+})
+
+declare module 'i18next-lite' {
+	interface Register {
+		i18n: typeof i18n
+	}
+}
+```
+
+```tsx
+import { I18nProvider, Trans, useI18n, useT } from 'i18next-lite/react'
+
+<Suspense fallback={null}><I18nProvider i18n={i18n}><App /></I18nProvider></Suspense>
+
+const t = useT()                          // or useT('settings') for a namespace
+t('greeting', { name: 'Ada' })            // "Hello, Ada!"
+t('inbox', { count: 3 })                  // "3 messages"
+t.rich('terms', { link: <a href="/terms" /> })
+<Trans i18nKey="terms" values={{ link: chunks => <a href="/terms">{chunks}</a> }} />
+const { locale, locales, setLocale, isPending, dir } = useI18n()
+```
+
+## Message syntax
+
+- Params: `{name}`. Numbers, bigints and Dates are formatted for the locale.
+- Plurals: an object with `zero`/`one`/`two`/`few`/`many`/`other` keys (`other` required), selected by `count`.
+- Rich text: `<tag>…</tag>` and `<tag/>`, rendered with an element or a `chunks => ReactNode` function. `t()` strips tags.
+- Nesting: `t('settings.title')`.
+- Fallback chain: `bn-BD` → `bn` → `defaultLocale`. A key missing everywhere returns the key and warns once in development.
+
+## Setup (Next.js App Router)
+
+- `src/i18n.ts`: `createI18n` plus the `Register` augmentation, as above.
+- `src/proxy.ts`: redirect `/path` to `/{locale}/path`, choosing the locale with `i18n.match(cookie) ?? negotiateLocale(request.headers.get('accept-language'), i18n.locales, i18n.defaultLocale)`.
+- `src/app/[lang]/layout.tsx`: `generateStaticParams = () => i18n.locales.map(lang => ({ lang }))`. Call `notFound()` unless `i18n.match(lang) === lang`. Render `<html lang={lang} dir={getDirection(lang)}>`.
+- `src/app/[lang]/providers.tsx` (`'use client'`): `<I18nProvider i18n={i18n} locale={lang}>`. Import the instance in this client file; it can't be passed as a prop from the server.
+- Server Components: `const t = await i18n.getT(lang, 'namespace?')`. Use `t()` and `t.rich()`.
+- Client Components: `useT()`. Switch language by navigating to the other locale's URL.
+
+## Docs
+
+- [README](https://github.com/SheikhAminul/i18next-lite#readme): full guide, API, comparison and migration from react-i18next, react-intl, next-intl
+- [Next.js example](https://github.com/SheikhAminul/i18next-lite/tree/main/examples/nextjs)
+- [Benchmarks](https://github.com/SheikhAminul/i18next-lite/tree/main/bench/compare)

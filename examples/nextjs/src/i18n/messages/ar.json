@@ -1,0 +1,13 @@
+{
+	"home": {
+		"title": "مرحبًا بك في {site}",
+		"intro": "تم عرض هذه الصفحة بواسطة <b>مكوّن خادم</b>. اقرأ <docs>التوثيق</docs>.",
+		"visits": { "zero": "لا زيارات بعد", "one": "زيارة واحدة", "two": "زيارتان", "few": "{count} زيارات", "many": "{count} زيارة", "other": "{count} زيارة" }
+	},
+	"counter": {
+		"label": "مكوّن عميل",
+		"clicks": { "zero": "لم يتم النقر", "one": "نقرة واحدة", "two": "نقرتان", "few": "{count} نقرات", "many": "{count} نقرة", "other": "{count} نقرة" },
+		"increment": "انقر"
+	},
+	"switcher": { "label": "اللغة" }
+}

@@ -1,0 +1,14 @@
+{
+	"meta": { "title": "i18next-lite + Next.js" },
+	"home": {
+		"title": "{site}-এ স্বাগতম",
+		"intro": "এই পৃষ্ঠাটি একটি <b>সার্ভার কম্পোনেন্ট</b> দ্বারা রেন্ডার করা হয়েছে। <docs>ডকস</docs> পড়ুন।",
+		"visits": { "zero": "এখনও কোনো ভিজিট নেই", "one": "{count}টি ভিজিট", "other": "{count}টি ভিজিট" }
+	},
+	"counter": {
+		"label": "ক্লায়েন্ট কম্পোনেন্ট",
+		"clicks": { "one": "{count} বার ক্লিক করা হয়েছে", "other": "{count} বার ক্লিক করা হয়েছে" },
+		"increment": "ক্লিক করুন"
+	},
+	"switcher": { "label": "ভাষা" }
+}

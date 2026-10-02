@@ -1,12 +1,37 @@
 {
 	"name": "i18next-lite",
-	"version": "2.2.26",
-	"description": "Lightweight and super simple i18n/internationalization module for React.",
-	"main": "lib/index.js",
-	"types": "lib/index.d.ts",
+	"version": "3.0.0",
+	"description": "Lightweight, type-safe i18n for React 19 and Next.js App Router: ~3 kB, zero dependencies. A fast, modern alternative to react-i18next, react-intl and next-intl with typed keys, plurals, rich text, Intl formatting, lazy locales, SSR and Server Components.",
+	"type": "module",
+	"sideEffects": false,
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"default": "./dist/index.js"
+		},
+		"./react": {
+			"types": "./dist/react.d.ts",
+			"default": "./dist/react.js"
+		},
+		"./package.json": "./package.json"
+	},
+	"files": [
+		"dist",
+		"src",
+		"llms.txt"
+	],
+	"engines": {
+		"node": ">=20"
+	},
 	"scripts": {
-		"build": "tsc",
-		"watch:build": "(set /p dirPath=\"Enter Dir Path:\" || set dirPath=./lib) && call tsc --watch --outDir \"%dirPath%\""
+		"build": "rm -rf dist && tsc -p tsconfig.build.json",
+		"dev": "tsc -p tsconfig.build.json --watch",
+		"typecheck": "tsc -p tsconfig.json",
+		"test": "vitest run",
+		"test:watch": "vitest",
+		"size": "npm run build && size-limit",
+		"prepublishOnly": "npm run typecheck && npm test && npm run build",
+		"bench": "npm run build && node bench/translate.js"
 	},
 	"repository": {
 		"type": "git",
@@ -14,32 +39,70 @@
 	},
 	"keywords": [
 		"i18n",
-		"react",
-		"translation",
-		"localization",
-		"i18next-lite",
-		"locale",
 		"internationalization",
-		"globalization",
-		"useTranslate",
-		"TranslationProvider",
-		"browser"
+		"localization",
+		"l10n",
+		"translation",
+		"react",
+		"react-19",
+		"nextjs",
+		"next.js",
+		"app-router",
+		"server-components",
+		"rsc",
+		"ssr",
+		"typescript",
+		"type-safe",
+		"pluralization",
+		"intl",
+		"rtl",
+		"lightweight",
+		"zero-dependency",
+		"react-i18next-alternative",
+		"react-intl-alternative",
+		"next-intl-alternative"
 	],
 	"author": "Sheikh Aminul <aminulfse@gmail.com>",
 	"license": "MIT",
 	"bugs": {
 		"url": "https://github.com/SheikhAminul/i18next-lite/issues"
 	},
-	"files": [
-		"./lib/**/*"
-	],
 	"homepage": "https://github.com/SheikhAminul/i18next-lite#readme",
 	"peerDependencies": {
 		"react": ">=19.0.0"
 	},
 	"devDependencies": {
-		"@types/react": "19.2.18",
-		"typescript": "^7.0.2",
-		"react": "^19.2.8"
-	}
+		"@size-limit/preset-small-lib": "14.1.0",
+		"@testing-library/dom": "10.4.2",
+		"@testing-library/react": "16.3.3",
+		"@types/react": "19.3.0",
+		"@types/react-dom": "19.3.0",
+		"jsdom": "30.1.1",
+		"react": "19.3.0",
+		"react-dom": "19.3.0",
+		"size-limit": "14.1.0",
+		"tinybench": "6.2.0",
+		"typescript": "7.0.2",
+		"vitest": "5.0.3"
+	},
+	"size-limit": [
+		{
+			"name": "core",
+			"path": "dist/index.js",
+			"import": "{ createI18n, negotiateLocale, cookieDetector }",
+			"ignore": [
+				"react"
+			],
+			"limit": "3 kB"
+		},
+		{
+			"name": "react bindings",
+			"path": "dist/react.js",
+			"import": "{ I18nProvider, useT, useI18n, useFormat, Trans }",
+			"ignore": [
+				"react"
+			],
+			"limit": "1 kB"
+		}
+	]
 }

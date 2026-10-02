@@ -1,0 +1,97 @@
+{
+	"name": "i18next-lite-compare",
+	"private": true,
+	"type": "module",
+	"description": "Reproducible size and speed comparison with other React i18n libraries.",
+	"scripts": {
+		"size": "size-limit",
+		"speed": "node speed.js"
+	},
+	"dependencies": {
+		"@lingui/core": "6.9.0",
+		"@lingui/react": "6.9.0",
+		"@size-limit/preset-small-lib": "14.1.0",
+		"i18next": "26.4.2",
+		"i18next-lite": "file:../..",
+		"next": "16.3.8",
+		"next-intl": "4.14.8",
+		"react": "19.3.0",
+		"react-dom": "19.3.0",
+		"react-i18next": "17.0.15",
+		"react-intl": "12.1.3",
+		"size-limit": "14.1.0",
+		"tinybench": "6.2.0"
+	},
+	"size-limit": [
+		{
+			"name": "i18next-lite",
+			"path": "entries/i18next-lite.js",
+			"ignore": [
+				"react",
+				"react-dom",
+				"react/jsx-runtime",
+				"next",
+				"next/navigation",
+				"next/link",
+				"next/router",
+				"next/headers"
+			]
+		},
+		{
+			"name": "react-i18next",
+			"path": "entries/react-i18next.js",
+			"ignore": [
+				"react",
+				"react-dom",
+				"react/jsx-runtime",
+				"next",
+				"next/navigation",
+				"next/link",
+				"next/router",
+				"next/headers"
+			]
+		},
+		{
+			"name": "react-intl",
+			"path": "entries/react-intl.js",
+			"ignore": [
+				"react",
+				"react-dom",
+				"react/jsx-runtime",
+				"next",
+				"next/navigation",
+				"next/link",
+				"next/router",
+				"next/headers"
+			]
+		},
+		{
+			"name": "next-intl",
+			"path": "entries/next-intl.js",
+			"ignore": [
+				"react",
+				"react-dom",
+				"react/jsx-runtime",
+				"next",
+				"next/navigation",
+				"next/link",
+				"next/router",
+				"next/headers"
+			]
+		},
+		{
+			"name": "lingui",
+			"path": "entries/lingui.js",
+			"ignore": [
+				"react",
+				"react-dom",
+				"react/jsx-runtime",
+				"next",
+				"next/navigation",
+				"next/link",
+				"next/router",
+				"next/headers"
+			]
+		}
+	]
+}
