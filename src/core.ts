@@ -148,7 +148,8 @@ const createTranslator = (shared: Shared, locale: string, namespace: string | un
 	const fullKey = (key: string) => (namespace ? `${namespace}.${key}` : key)
 
 	// Each key is resolved through the fallback chain once, then served from this memo until messages change.
-	const memo = new Map<string, Entry | null>()
+	// Misses aren't remembered, so arbitrary keys (e.g. from user input) can't grow it past the messages that exist.
+	const memo = new Map<string, Entry>()
 	let version = shared.version
 	const resolve = (key: string) => {
 		if (version !== shared.version) {
@@ -156,7 +157,7 @@ const createTranslator = (shared: Shared, locale: string, namespace: string | un
 			version = shared.version
 		}
 		let entry = memo.get(key)
-		if (entry === undefined) memo.set(key, (entry = lookup(shared, locale, fullKey(key)) ?? null))
+		if (!entry && (entry = lookup(shared, locale, fullKey(key)))) memo.set(key, entry)
 		return entry
 	}
 
@@ -183,7 +184,7 @@ const createTranslator = (shared: Shared, locale: string, namespace: string | un
 			warnOnce(shared, `tag\0${fullKey(key)}\0${tag}`, `No renderer for <${tag}> in message "${fullKey(key)}".`)
 		return toNode(renderRich(message, entry.locale, values, onMissingTag))
 	}
-	translate.has = (key: string) => resolve(key) !== null
+	translate.has = (key: string) => !!resolve(key)
 	translate.locale = locale
 	translate.namespace = namespace
 	return translate as unknown as Translator

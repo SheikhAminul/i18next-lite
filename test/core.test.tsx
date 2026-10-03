@@ -64,6 +64,17 @@ describe('translate', () => {
 		expect(translate('total', { amount: 10n })).toBe('Total: 10')
 	})
 
+	it('keeps registered locales cached after the caches fill with junk locales', () => {
+		const i18n = createTestI18n()
+		for (let n = 0; n < 1200; n++) {
+			i18n.translator(`xx-${n}` as 'en')
+			i18n.formatter(`xx-${n}`)
+		}
+		expect(i18n.translator('ar')).toBe(i18n.translator('ar'))
+		expect(i18n.formatter('ar')).toBe(i18n.formatter('ar'))
+		expect(i18n.translator('ar')('plain')).toBe('نص عادي')
+	})
+
 	it('renders -0 as 0', () => {
 		expect(translate('total', { amount: -0 })).toBe('Total: 0')
 		expect(translate('total', { amount: 0 })).toBe('Total: 0')

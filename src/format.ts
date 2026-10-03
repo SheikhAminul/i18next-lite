@@ -11,13 +11,14 @@ const withOptions = new Map<string, unknown>()
 
 /**
  * Get or create a cached value. Every cache is capped, so unbounded input (arbitrary locales, options or numbers,
- * e.g. from requests on a server) can't grow memory forever; past the cap, values are created without being kept.
+ * e.g. from requests on a server) can't grow memory forever. A full cache starts over rather than refusing new
+ * entries, so values in use are always cached again, e.g. a registered locale's translator after junk locales.
  */
 export const reuse = <K, V>(cache: Map<K, V>, key: K, create: (key: K) => V): V => {
 	let value = cache.get(key)
 	if (value === undefined) {
-		value = create(key)
-		if (cache.size < 500) cache.set(key, value)
+		if (cache.size >= 500) cache.clear()
+		cache.set(key, (value = create(key)))
 	}
 	return value
 }

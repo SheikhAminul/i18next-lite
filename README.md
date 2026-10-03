@@ -332,14 +332,14 @@ How it fits together:
 | `translate('greeting', { name })` | ~11 M |
 | `translate('total', { amount: 1234.5 })` (number formatting) | ~10 M |
 | `translate('inbox', { count })` (plural) | ~9 M |
-| plural with a count never seen before | ~1.1 M |
+| plural with a count never seen before | ~1 M |
 | `translate.rich(...)` with two elements | ~320 k |
 
 Why it's fast:
 - Each key walks the fallback chain once per translator and is then a single `Map` lookup. The memo is cleared only when messages change.
 - Messages without `{` or `<` are returned as-is, never parsed or copied. Parsed trees are shared across locales and namespaces.
 - `Intl` calls cost hundreds of nanoseconds, so interpolated numbers and plural categories are remembered per locale. Counts repeat, so most plural calls skip `Intl` entirely.
-- Every cache is capped, so memory stays flat on a long-running server even when locales, options or numbers come from user input.
+- Memory stays bounded on a long-running server, even when locales, keys, options or numbers come from user input: caches keyed by such input are capped, and translators remember only keys that exist.
 - The store lives outside React and is read with `useSyncExternalStore`. The context value never changes, so components re-render only when the locale does, not when a parent re-renders.
 
 ## Migrating from other libraries
