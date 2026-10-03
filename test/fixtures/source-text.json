@@ -1,0 +1,5 @@
+{
+  "Welcome, {firstName}!": "Welcome, {firstName}!",
+  "Read the <link>terms</link>.": "Read the <link>terms</link>.",
+  "{count} files": { "one": "{count} file", "other": "{count} files" }
+}

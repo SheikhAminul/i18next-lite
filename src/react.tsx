@@ -144,7 +144,7 @@ export const useFormat = (): Formatter => {
 }
 
 type Key = MessageKey<RegisteredMessages>
-type TranslateValues<K extends Key> = RichValuesOf<MessageAt<RegisteredMessages, K>>
+type TranslateValues<K extends Key> = RichValuesOf<MessageAt<RegisteredMessages, K>, K>
 
 export type TranslateProps<K extends Key> = { i18nKey: K } & ({} extends TranslateValues<K>
 	? { values?: TranslateValues<K> | undefined }

@@ -4,7 +4,7 @@
 
 A modern alternative to react-i18next, react-intl and next-intl for apps that need typed keys, interpolation, plurals, rich text, formatting, lazy loading and SSR. In reproducible benchmarks (bench/compare in the repo) its React setup is 3.3 kB versus 18.2 kB for react-i18next + i18next, 12.5 kB for react-intl and 10.1 kB for next-intl, and it translates 4–65× faster.
 
-It is not the right choice when a project needs full ICU MessageFormat (`select`, `selectordinal`), the i18next plugin ecosystem, automatic message extraction, or built-in localized-pathname routing.
+It is not the right choice when a project needs full ICU MessageFormat (`select`, `selectordinal`), the i18next plugin ecosystem, or built-in localized-pathname routing.
 
 ## Install
 
@@ -61,7 +61,14 @@ const { locale, locales, setLocale, isPending, dir } = useI18n()
 - Rich text: `<tag>…</tag>` and `<tag/>`, rendered with an element or a `chunks => ReactNode` function. `translate()` strips tags.
 - Nesting: `translate('settings.title')`.
 - Detection: `detectors` run after hydration; the first registered match wins. `setLocale` choices are saved by detectors with `persist` (storage, cookie); detected locales are not.
-- Fallback chain: `bn-BD` → `bn` → `defaultLocale`. A key missing everywhere returns the key and warns once in development.
+- Fallback chain: `bn-BD` → `bn` → `defaultLocale`. A key missing everywhere is rendered as the message itself, with its params, and warns once in development.
+
+## Source-text keys and extraction
+
+- Keys can be the default-language text: `translate('Welcome, {firstName}!', { firstName })`, `<Translate i18nKey="Read the <link>terms</link>." values={…} />`.
+- `npx i18next-lite extract src --out src/locales --locales en,es` scans the code for string literals passed to `translate`/`t` (and their `.rich`) and `i18nKey` props. It writes `en.json`, which maps each message to itself, and `es.json` with the same keys to translate. Re-running keeps existing translations, adds new messages and removes unused ones (`--keep-unused` keeps them). `--check` writes nothing and exits with 1 when a file is out of date (for CI). `-f translate,t,$t` sets the function names.
+- Load them as usual: `import en from './locales/en.json'`, `es: () => import('./locales/es.json')`. Keys are typed from the JSON, and params and tags are read from the key.
+- Dynamic keys (`translate(variable)`) are not found. Use `{name}` params, not `{{name}}`. Use source-text keys with an unscoped `useTranslator()`.
 
 ## Setup (Next.js App Router)
 

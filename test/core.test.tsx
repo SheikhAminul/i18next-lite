@@ -174,6 +174,27 @@ describe('missing keys and fallbacks', () => {
 		expect(warn.mock.calls[0]?.[0]).toContain('Missing message "nope" for locale "en"')
 	})
 
+	it('renders a missing key as the message, formatted for the default locale', async () => {
+		vi.spyOn(console, 'warn').mockImplementation(() => {})
+		const translate = loose(await createTestI18n().loadTranslator('bn'))
+		expect(translate('Welcome, {firstName}!', { firstName: 'John' })).toBe('Welcome, John!')
+		expect(translate('{count} left', { count: 1234 })).toBe('1,234 left')
+		expect(renderToStaticMarkup(<>{translate.rich('Read the <b>docs</b>', { b: <b /> })}</>)).toBe('Read the <b>docs</b>')
+	})
+
+	it('looks up source-text keys', () => {
+		const i18n = createI18n({
+			defaultLocale: 'en',
+			locale: 'es',
+			locales: {
+				en: { 'Welcome, {firstName}!': 'Welcome, {firstName}!', 'I am fine.': 'I am fine.' },
+				es: { 'Welcome, {firstName}!': '¡Bienvenido, {firstName}!', 'I am fine.': 'Estoy bien.' }
+			}
+		})
+		expect(i18n.translate('Welcome, {firstName}!', { firstName: 'John' })).toBe('¡Bienvenido, John!')
+		expect(i18n.translate('I am fine.')).toBe('Estoy bien.')
+	})
+
 	it('lets onMissingKey supply a replacement', async () => {
 		const onMissingKey = vi.fn(({ key }: { key: string }) => `⚠ ${key}`)
 		const home = loose(await createTestI18n({ onMissingKey }).loadTranslator('ar', 'home'))

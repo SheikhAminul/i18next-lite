@@ -161,28 +161,28 @@ const createTranslator = (shared: Shared, locale: string, namespace: string | un
 		return entry
 	}
 
-	const missing = (key: string) => {
+	// A missing key is rendered as the message itself, in the default locale, so source-text keys such as
+	// `translate('Hello, {name}!', { name })` read correctly before they are extracted to the locale files.
+	const missing = (key: string): Compiled => {
 		const info = { key: fullKey(key), locale }
 		const replacement = shared.config.onMissingKey?.(info)
 		if (typeof replacement === 'string') return replacement
 		warnOnce(shared, `key\0${locale}\0${info.key}`, `Missing message "${info.key}" for locale "${locale}".`)
-		return info.key
+		return compile(info.key)
 	}
 
 	const translate = (key: string, params?: Values) => {
 		const entry = resolve(key)
-		if (!entry) return missing(key)
-		const message = select(entry, params?.count)
-		return typeof message === 'string' ? message : renderString(message, entry.locale, params)
+		const message = entry ? select(entry, params?.count) : missing(key)
+		return typeof message === 'string' ? message : renderString(message, entry?.locale ?? shared.config.defaultLocale, params)
 	}
 	translate.rich = (key: string, values?: Values) => {
 		const entry = resolve(key)
-		if (!entry) return missing(key)
-		const message = select(entry, values?.count)
+		const message = entry ? select(entry, values?.count) : missing(key)
 		if (typeof message === 'string') return message
 		const onMissingTag = (tag: string) =>
 			warnOnce(shared, `tag\0${fullKey(key)}\0${tag}`, `No renderer for <${tag}> in message "${fullKey(key)}".`)
-		return toNode(renderRich(message, entry.locale, values, onMissingTag))
+		return toNode(renderRich(message, entry?.locale ?? shared.config.defaultLocale, values, onMissingTag))
 	}
 	translate.has = (key: string) => !!resolve(key)
 	translate.locale = locale

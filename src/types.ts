@@ -103,23 +103,31 @@ type TagNames<S extends string> = S extends `${string}<${infer Tag}>${infer Rest
 	: never
 
 type IsLoose<S extends string> = string extends S ? true : false
+/**
+ * The text whose params and tags a call must supply. When the message is a loose `string` (e.g. from JSON) and the
+ * key is the source text, as in `translate('Hello, {name}!')`, the key is read instead.
+ */
+type TextOf<V, K extends string> =
+	IsLoose<MessageText<V>> extends true ? (K extends `${string}${'{' | '<'}${string}` ? K : MessageText<V>) : MessageText<V>
 type CountParam<V> = [V] extends [PluralMessage] ? { readonly count: number | bigint } : {}
 /** A plural's `count` comes from `CountParam`; in any other message `{count}` is an ordinary param. */
-type NamedParams<V> = [V] extends [PluralMessage] ? Exclude<ParamNames<MessageText<V>>, 'count'> : ParamNames<MessageText<V>>
+type NamedParams<V, T extends string> = [V] extends [PluralMessage] ? Exclude<ParamNames<T>, 'count'> : ParamNames<T>
 
 type LooseParams = { readonly [name: string]: ParamValue }
 type LooseRichValues = { readonly [name: string]: ParamValue | ReactNode | RichTag }
 
-export type ParamsOf<V> = CountParam<V> &
-	(IsLoose<MessageText<V>> extends true
+/** The params for message `V` at key `K`. */
+export type ParamsOf<V, K extends string = string> = CountParam<V> &
+	(IsLoose<TextOf<V, K>> extends true
 		? LooseParams
-		: { readonly [P in NamedParams<V>]: ParamValue })
+		: { readonly [P in NamedParams<V, TextOf<V, K>>]: ParamValue })
 
-export type RichValuesOf<V> = CountParam<V> &
-	(IsLoose<MessageText<V>> extends true
+/** The params and tag renderers for message `V` at key `K`. */
+export type RichValuesOf<V, K extends string = string> = CountParam<V> &
+	(IsLoose<TextOf<V, K>> extends true
 		? LooseRichValues
-		: { readonly [P in NamedParams<V>]: ParamValue | ReactNode } & {
-				readonly [T in TagNames<MessageText<V>>]: RichTag
+		: { readonly [P in NamedParams<V, TextOf<V, K>>]: ParamValue | ReactNode } & {
+				readonly [T in TagNames<TextOf<V, K>>]: RichTag
 			})
 
 /** The params argument is optional when the message needs none, and required otherwise. */
@@ -136,7 +144,7 @@ export interface Translator<M = Messages> {
 	 * translate('settings.title') // nested key
 	 * ```
 	 */
-	<K extends MessageKey<M>>(key: K, ...params: Args<ParamsOf<MessageAt<M, K>>>): string
+	<K extends MessageKey<M>>(key: K, ...params: Args<ParamsOf<MessageAt<M, K>, K>>): string
 	/**
 	 * Translate `key` to React nodes, rendering `<tag>` markup with the matching value from `values`.
 	 *
@@ -147,7 +155,7 @@ export interface Translator<M = Messages> {
 	 * translate.rich('terms', { link: chunks => <a href="/terms">{chunks}</a> })
 	 * ```
 	 */
-	rich<K extends MessageKey<M>>(key: K, ...values: Args<RichValuesOf<MessageAt<M, K>>>): ReactNode
+	rich<K extends MessageKey<M>>(key: K, ...values: Args<RichValuesOf<MessageAt<M, K>, K>>): ReactNode
 	/** Whether `key` resolves to a message in this locale or one of its fallbacks. */
 	has(key: string): boolean
 	readonly locale: string

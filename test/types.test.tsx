@@ -4,6 +4,7 @@ import { createI18n, type MessageKey, type Messages, type Namespace, type Transl
 import { Translate, useI18n, useTranslator } from '../src/react.js'
 import { createTestI18n } from './fixtures/i18n.js'
 import { en } from './fixtures/messages.js'
+import sourceText from './fixtures/source-text.json' with { type: 'json' }
 
 describe('types', () => {
 	const i18n = createTestI18n()
@@ -114,6 +115,27 @@ describe('types', () => {
 		untyped.translate('anything')
 		untyped.translate('anything', { any: 1 })
 		untyped.translate.rich('anything', { b: <b /> })
+	})
+
+	it('reads params and tags from source-text keys when messages are loose', () => {
+		// An extracted locale file: JSON types its messages as `string`.
+		const { translate } = createI18n({ defaultLocale: 'en', locales: { en: sourceText } })
+		translate('Welcome, {firstName}!', { firstName: 'John' })
+		// @ts-expect-error missing params
+		translate('Welcome, {firstName}!')
+		// @ts-expect-error misspelled param
+		translate('Welcome, {firstName}!', { firstname: 'John' })
+		translate.rich('Read the <link>terms</link>.', { link: <a /> })
+		// @ts-expect-error missing the <link> renderer
+		translate.rich('Read the <link>terms</link>.')
+		translate('{count} files', { count: 2 })
+		// @ts-expect-error count is required
+		translate('{count} files')
+
+		const untyped = createI18n({ defaultLocale: 'en', locales: { en: {} as Messages } })
+		untyped.translate('Hi, {name}', { name: 'x' })
+		// @ts-expect-error missing params
+		untyped.translate('Hi, {name}')
 	})
 
 	it('types the React hooks via Register', () => {

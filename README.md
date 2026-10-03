@@ -40,6 +40,7 @@ Most React apps need the same things from i18n: typed keys, interpolation, plura
 - **SSR, Server Components and Next.js App Router**: rendering is hydration-safe and each request's locale is isolated.
 - **Detection** from the browser, `localStorage`, a cookie, the query string or `<html lang>`, with the user's choice remembered.
 - **RTL**: `<html lang dir>` is kept in sync for you.
+- **Source-text keys**: write `translate('Welcome, {name}!', { name })` in your code, and `npx i18next-lite extract` writes the locale files for you.
 
 ## Comparison
 
@@ -64,7 +65,6 @@ i18next-lite covers what most React and Next.js apps need, but not everything:
 
 - **You need full ICU MessageFormat** (`select` for gender, `selectordinal`, nested plurals) → react-intl, next-intl or Lingui.
 - **You rely on the i18next ecosystem** (backend plugins, Locize, frameworks other than React) → i18next.
-- **You want messages extracted from source code automatically** → Lingui, FormatJS or next-intl.
 - **You want locale-aware routing helpers** (localized pathnames, navigation APIs) built into the i18n library → next-intl. With i18next-lite you write a short `proxy.ts` yourself; see [Next.js](#nextjs-app-router).
 
 ## Install
@@ -166,7 +166,73 @@ const LanguagePicker = () => {
 - **Tags** render with an element, which is cloned with the chunks as its children, or with a function `chunks => ReactNode`. `translate()` strips tags and keeps their text, which is handy for `aria-label` and `title`.
 - **Params** in `translate.rich` can also be React nodes: `translate.rich('greeting', { name: <b>Ada</b> })`.
 - **Namespaces** scope keys: `useTranslator('settings')('title')`.
-- **Missing keys** fall back through the locale chain. If a key is found nowhere, the key itself is rendered and a warning is logged once in development. Customize this with `onMissingKey`.
+- **Missing keys** fall back through the locale chain. If a key is found nowhere, the key itself is rendered as the message, with its params, and a warning is logged once in development. Customize this with `onMissingKey`.
+
+## Source-text keys and extraction
+
+Instead of inventing keys, you can write the default-language text directly in your code and let the CLI generate the locale files:
+
+```tsx
+<div>{translate('Welcome, {firstName}!', { firstName: 'John' })}</div>
+<p>{translate('I am fine.')}</p>
+<Translate i18nKey="Read the <link>terms</link>." values={{ link: <a href="/terms" /> }} />
+```
+
+```sh
+npx i18next-lite extract src --out src/locales --locales en,es
+```
+
+This scans `src` and writes one file per locale. The first locale is the default, and its file maps each message to itself:
+
+```jsonc
+// src/locales/en.json
+{
+  "Welcome, {firstName}!": "Welcome, {firstName}!",
+  "I am fine.": "I am fine.",
+  "Read the <link>terms</link>.": "Read the <link>terms</link>."
+}
+```
+
+The other locales get the same keys, ready to translate:
+
+```jsonc
+// src/locales/es.json
+{
+  "Welcome, {firstName}!": "¡Bienvenido, {firstName}!",
+  "I am fine.": "Estoy bien.",
+  "Read the <link>terms</link>.": "Lee los <link>términos</link>."
+}
+```
+
+Use the files like any other messages:
+
+```ts
+import en from './locales/en.json'
+
+export const i18n = createI18n({
+	defaultLocale: 'en',
+	locales: { en, es: () => import('./locales/es.json') }
+})
+```
+
+- **Re-run it whenever you change the text.** New messages are added and messages no longer in the code are removed. Existing translations, and any message you edited by hand, are kept. Each file's report says how many messages are still untranslated, meaning they are the same as the default locale's.
+- **It stays type-safe.** Keys are typed from `en.json`. Params and tags are read from the key itself, so `translate('Welcome, {firstName}!')` without `firstName` fails the build.
+- **It works before you extract.** A message missing from every locale renders as its own text, with params filled in, and logs a warning in development.
+- **Plurals:** after extracting, change the value in the default locale file to a plural object, for example `"{count} files": { "one": "{count} file", "other": "{count} files" }`. New locales get a copy to translate.
+- **Params use single braces**: write `{name}`, not `{{name}}`.
+- **Only string literals are found**: `translate('…')`, `translate.rich('…')`, `` translate(`…`) `` without `${}`, and `<Translate i18nKey="…">`. Dynamic keys such as `translate(status)` can't be found; add them to the files yourself and pass `--keep-unused`.
+- Use source-text keys with an unscoped translator (`useTranslator()`, not `useTranslator('ns')`). Run the CLI only on projects that use source-text keys; on structured keys like `'settings.title'`, it would map each key to itself.
+
+| Option | Default | |
+|---|---|---|
+| `[paths...]` | `src` | Files or directories to scan. `node_modules`, build output and dot-directories are skipped. Scans `.js`, `.jsx`, `.ts`, `.tsx`, `.mjs`, `.cjs`, `.mts`, `.cts`, `.vue`, `.svelte` and `.astro` files |
+| `-o, --out <dir>` | `src/locales` | Where the `<locale>.json` files live |
+| `-l, --locales <list>` | `en` plus each existing `<locale>.json` | Comma-separated, default locale first |
+| `-f, --functions <list>` | `translate,t` | Translator names to look for, e.g. `translate,t,$t` |
+| `--keep-unused` | off | Keep messages that are no longer in the code |
+| `--check` | off | Write nothing, and exit with 1 if a file is out of date. Use it in CI |
+
+Add it to your scripts so it is easy to re-run: `"i18n": "i18next-lite extract src --out src/locales --locales en,es"`.
 
 ## Switching and loading locales
 
@@ -308,6 +374,10 @@ How it fits together:
 **Instance:** `locale`, `locales`, `defaultLocale`, `translate`, `format`, `isReady`, `ready`, `setLocale()`, `detect()`, `match()`, `load()`, `loadTranslator()`, `translator()`, `formatter()`, `addMessages()`, `getMessages()`, `clone()`, `subscribe()`, `getSnapshot()`.
 
 **Translator:** `translate(key, params?)` returns a string. `translate.rich(key, values?)` returns a ReactNode. Also `translate.has(key)`, `translate.locale` and `translate.namespace`. A translator's identity is stable per locale, so it's safe in dependency arrays.
+
+### `i18next-lite extract` (CLI)
+
+Generates `<locale>.json` files from the messages in your code. See [Source-text keys and extraction](#source-text-keys-and-extraction).
 
 ### `i18next-lite/react`
 
